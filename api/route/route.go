@@ -22,4 +22,5 @@ func Setup(env *bootstrap.Env, timeout time.Duration, db *gorm.DB, gin *gin.Engi
 	// All Private APIs
 	NewUserRouter(db, protectedRouter)
 	NewFlashcardRoute(db, protectedRouter)
+	NewDeckRoute(db, protectedRouter)
 }

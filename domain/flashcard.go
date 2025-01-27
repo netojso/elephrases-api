@@ -10,16 +10,18 @@ import (
 
 type Flashcard struct {
 	ID             uuid.UUID               `json:"id"`
-	Front          string                  `json:"front" binding:"required" validate:"required"`
-	Back           string                  `json:"back" binding:"required" validate:"required"`
+	DeckID         uuid.UUID               `json:"deck_id" validate:"required"`
+	Front          string                  `json:"front" validate:"required"`
+	Back           string                  `json:"back" validate:"required"`
 	CreatedAt      string                  `json:"created_at" validate:"required"`
 	LastReviewedAt string                  `json:"last_reviewed_at"`
 	Status         internal.NullableString `json:"status"`
 }
 
 type CreateFlashcardRequest struct {
-	Front string `json:"front" validate:"required"`
-	Back  string `json:"back" validate:"required"`
+	DeckID string `json:"deck_id" binding:"required"`
+	Front  string `json:"front" binding:"required"`
+	Back   string `json:"back" binding:"required"`
 }
 
 func (f *Flashcard) Validate() error {
@@ -32,6 +34,7 @@ func NewFlashcard(
 ) (*Flashcard, error) {
 	flashcard := &Flashcard{
 		ID:             uuid.New(),
+		DeckID:         uuid.MustParse(params.DeckID),
 		Front:          params.Front,
 		Back:           params.Back,
 		CreatedAt:      time.Now().Format(time.RFC3339),

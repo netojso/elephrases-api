@@ -1,0 +1,4 @@
+ALTER TABLE flashcards
+ADD COLUMN deck_id UUID NOT NULL,
+ADD CONSTRAINT fk_deck
+FOREIGN KEY (deck_id) REFERENCES decks(id);
