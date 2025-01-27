@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/netojso/go-api-template/api/middleware"
-	"github.com/netojso/go-api-template/bootstrap"
+	"github.com/netojso/elephrases-api/api/middleware"
+	"github.com/netojso/elephrases-api/bootstrap"
 	"gorm.io/gorm"
 )
 

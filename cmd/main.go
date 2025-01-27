@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/netojso/go-api-template/api/route"
-	"github.com/netojso/go-api-template/bootstrap"
+	"github.com/netojso/elephrases-api/api/route"
+	"github.com/netojso/elephrases-api/bootstrap"
 )
 
 func main() {

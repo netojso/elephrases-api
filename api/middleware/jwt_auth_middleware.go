@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/netojso/go-api-template/domain"
-	"github.com/netojso/go-api-template/internal/token_util"
+	"github.com/netojso/elephrases-api/domain"
+	"github.com/netojso/elephrases-api/internal/token_util"
 )
 
 func JwtAuthMiddleware(secret string) gin.HandlerFunc {

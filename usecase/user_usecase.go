@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"github.com/netojso/go-api-template/domain"
+	"github.com/netojso/elephrases-api/domain"
 )
 
 type userUsecase struct {

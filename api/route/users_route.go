@@ -2,9 +2,9 @@ package route
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/netojso/go-api-template/api/controller"
-	"github.com/netojso/go-api-template/repository"
-	"github.com/netojso/go-api-template/usecase"
+	"github.com/netojso/elephrases-api/api/controller"
+	"github.com/netojso/elephrases-api/repository"
+	"github.com/netojso/elephrases-api/usecase"
 	"gorm.io/gorm"
 )
 

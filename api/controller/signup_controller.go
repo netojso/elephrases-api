@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/netojso/go-api-template/bootstrap"
-	"github.com/netojso/go-api-template/domain"
+	"github.com/netojso/elephrases-api/bootstrap"
+	"github.com/netojso/elephrases-api/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 

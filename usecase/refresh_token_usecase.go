@@ -1,8 +1,8 @@
 package usecase
 
 import (
-	"github.com/netojso/go-api-template/domain"
-	"github.com/netojso/go-api-template/internal/token_util"
+	"github.com/netojso/elephrases-api/domain"
+	"github.com/netojso/elephrases-api/internal/token_util"
 )
 
 type refreshTokenUsecase struct {

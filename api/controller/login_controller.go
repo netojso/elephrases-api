@@ -6,8 +6,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/netojso/go-api-template/bootstrap"
-	"github.com/netojso/go-api-template/domain"
+	"github.com/netojso/elephrases-api/bootstrap"
+	"github.com/netojso/elephrases-api/domain"
 )
 
 type LoginController struct {

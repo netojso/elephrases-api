@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"github.com/netojso/go-api-template/internal"
+	"github.com/netojso/elephrases-api/internal"
 )
 
 type User struct {

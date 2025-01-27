@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/netojso/go-api-template/domain"
+	"github.com/netojso/elephrases-api/domain"
 )
 
 type UserController struct {

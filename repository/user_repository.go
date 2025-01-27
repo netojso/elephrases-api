@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/netojso/go-api-template/domain"
+	"github.com/netojso/elephrases-api/domain"
 	"gorm.io/gorm"
 )
 

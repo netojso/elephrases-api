@@ -1,4 +1,4 @@
-module github.com/netojso/go-api-template
+module github.com/netojso/elephrases-api
 
 go 1.23.5
 

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
-	"github.com/netojso/go-api-template/domain"
+	"github.com/netojso/elephrases-api/domain"
 )
 
 func CreateAccessToken(user domain.User, secret string, expiry int) (accessToken string, err error) {
