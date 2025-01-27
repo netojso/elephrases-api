@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"log"
 
 	"github.com/netojso/elephrases-api/domain"
 	"gorm.io/gorm"
@@ -118,15 +119,8 @@ func (r *UserRepository) GetByID(id string) (domain.User, error) {
 }
 
 func (r *UserRepository) UpdateUser(id string, user domain.User) error {
-
-	query := `
-		UPDATE users 
-		SET 
-			full_name = COALESCE(?, full_name),
-			phone_number = COALESCE(?, phone_number),
-		WHERE id = ?
-	`
-	err := r.DB.Exec(query, user.FullName, user.PhoneNumber, id).Error
+	log.Print("Updating user")
+	err := r.DB.Save(user).Error
 	return err
 }
 

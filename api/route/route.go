@@ -21,4 +21,5 @@ func Setup(env *bootstrap.Env, timeout time.Duration, db *gorm.DB, gin *gin.Engi
 	protectedRouter.Use(middleware.JwtAuthMiddleware(env.AccessTokenSecret))
 	// All Private APIs
 	NewUserRouter(db, protectedRouter)
+	NewFlashcardRoute(db, protectedRouter)
 }
