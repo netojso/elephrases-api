@@ -8,6 +8,12 @@ import (
 	"github.com/netojso/elephrases-api/internal"
 )
 
+type Settings struct {
+	LearningSteps      []time.Duration `json:"learning_steps"`
+	GraduatingInterval time.Duration   `json:"graduating_interval"`
+	EasyInterval       time.Duration   `json:"easy_interval"`
+}
+
 type Deck struct {
 	ID          uuid.UUID               `json:"id" validate:"required"`
 	Name        string                  `json:"name" validate:"required"`
@@ -16,6 +22,7 @@ type Deck struct {
 	Visibility  string                  `json:"visibility" validate:"required"`
 	CreatedAt   time.Time               `json:"created_at" validate:"required"`
 	Flashcards  []Flashcard             `json:"flashcards"`
+	// Settings    *Seetings               `json:"settings"`
 }
 
 type CreateDeckRequest struct {

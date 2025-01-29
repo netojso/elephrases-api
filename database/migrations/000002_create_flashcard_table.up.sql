@@ -3,6 +3,5 @@ CREATE TABLE flashcards (
     front TEXT NOT NULL,
     back TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_reviewed_at TIMESTAMP,
-    status TEXT
-);
+    last_review_at TIMESTAMP
+    );

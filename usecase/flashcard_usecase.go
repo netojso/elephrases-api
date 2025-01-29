@@ -1,6 +1,8 @@
 package usecase
 
-import "github.com/netojso/elephrases-api/domain"
+import (
+	"github.com/netojso/elephrases-api/domain"
+)
 
 type FlashcardUsecase struct {
 	flashcardRepo domain.FlashcardRepository
@@ -25,6 +27,18 @@ func (fu *FlashcardUsecase) Create(flashcard domain.Flashcard) error {
 }
 
 func (fu *FlashcardUsecase) Update(flashcard domain.Flashcard) error {
+	return fu.flashcardRepo.Update(flashcard)
+}
+
+func (fu *FlashcardUsecase) UpdateReview(id string, response string) error {
+	flashcard, err := fu.flashcardRepo.FindByID(id)
+
+	if err != nil {
+		return err
+	}
+
+	flashcard.UpdateReview(response, nil)
+
 	return fu.flashcardRepo.Update(flashcard)
 }
 
