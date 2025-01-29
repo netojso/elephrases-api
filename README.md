@@ -1,177 +1,125 @@
-# Regras Funcionais e Não Funcionais para um Aplicativo de Flashcards
+# Flashcards App - Feature List and Structure
 
-## Regras Funcionais
-
-### 1. Gerenciamento de Flashcards
-- Permitir a criação de flashcards com:
-  - Frente: Texto, imagem, ou áudio para perguntas ou termos.
-  - Verso: Texto, imagem, ou áudio para respostas ou definições.
-- Permitir a edição e exclusão de flashcards existentes.
-- Suporte para organização dos flashcards em decks temáticos.
-- Funcionalidade de busca para encontrar flashcards ou decks específicos.
-
-### 2. Modos de Estudo
-#### 2.1. Modo Aprendizado
-- Exibir flashcards sequencialmente para facilitar a memorização inicial.
-- Permitir que o usuário marque cada flashcard como:
-  - "Fácil": Indica que o usuário já domina o conteúdo.
-  - "Médio": Indica que o conteúdo requer revisão moderada.
-  - "Difícil": Indica que o conteúdo precisa de revisão frequente.
-- Mostrar um resumo ao final com a classificação dos flashcards.
-
-#### 2.2. Modo Repetição Espaciada
-- Usar um algoritmo baseado em intervalos otimizados para reforço de memorização.
-- Notificar o usuário quando for hora de revisar os flashcards.
-- Ajustar automaticamente o intervalo com base no feedback do usuário.
-
-#### 2.3. Modo Quiz
-- Apresentar a frente do flashcard e solicitar que o usuário insira ou diga a resposta antes de revelar o verso.
-- Avaliar automaticamente a resposta, se aplicável, ou permitir avaliação manual.
-- Exibir um placar ao final com a porcentagem de acertos e erros.
-
-#### 2.4. Modo Aleatório
-- Apresentar os flashcards em ordem aleatória para testar a memorização.
-- Incluir uma opção para revisar apenas os flashcards marcados como "difícil" ou "não conhecido".
-
-### 3. Gerenciamento de Decks
-- Criar, editar, excluir e duplicar decks.
-- Importar e exportar decks em formatos como CSV ou JSON.
-- Compartilhar decks com outros usuários por meio de links ou publicação na comunidade do aplicativo.
-- Suporte para categorização de decks (ex.: idiomas, ciências, hobbies).
-
-### 4. Avaliação e Feedback
-- Permitir ao usuário marcar flashcards como:
-  - "Conhecido": Revisão em intervalos maiores.
-  - "Não conhecido": Revisão em intervalos menores.
-- Exibir relatórios de desempenho:
-  - Percentual de acertos e erros.
-  - Tempo gasto estudando.
-  - Estatísticas dos flashcards mais difíceis.
-
-### 5. Personalização
-- Opção de personalizar:
-  - Temas e cores do aplicativo.
-  - Ordem de exibição dos flashcards (ex.: aleatória ou ordenada).
-  - Notificações de revisão.
-
-### 6. Funcionalidades Comunitárias
-- Criar uma seção de decks compartilhados, com:
-  - Sistema de avaliação (ex.: estrelas ou curtidas).
-  - Opção de seguir criadores de decks.
-- Permitir comentários nos decks compartilhados.
-
-### 7. Acessibilidade
-- Suporte para idiomas variados.
-- Compatibilidade com leitores de tela e ferramentas de acessibilidade.
-
-### 8. Recursos Avançados
-- Sugestões automáticas de criação de conteúdo com base em IA.
-- Gamificação:
-  - Pontos e conquistas por uso contínuo.
-  - Níveis e rankings.
-- Modo offline para estudo sem conexão à internet.
-
-## Regras Não Funcionais
-
-### 1. Desempenho
-- O carregamento dos flashcards deve ocorrer em menos de 2 segundos.
-- O sistema deve suportar decks com até 1.000 flashcards sem queda de desempenho.
-
-### 2. Segurança
-- Garantir que os dados dos usuários sejam armazenados de forma segura e criptografada.
-- Implementar autenticação segura com suporte a autenticação de dois fatores (2FA).
-
-### 3. Escalabilidade
-- Suporte a até 1 milhão de usuários ativos simultaneamente sem degradação da performance.
-- Arquitetura preparada para expansão de servidores e armazenamento.
-
-### 4. Confiabilidade
-- O aplicativo deve ter uptime de 99,9%.
-- Backup automático dos dados dos usuários a cada 24 horas.
-
-### 5. Usabilidade
-- Interface intuitiva e fácil de usar para todas as idades.
-- Suporte a dispositivos móveis e tablets, com layout responsivo.
-
-### 6. Portabilidade
-- Disponível para plataformas Android, iOS e Web.
-- Sincronização de dados entre dispositivos em tempo real.
-
-### 7. Manutenibilidade
-- Código estruturado para fácil manutenção e evolução.
-- Registro detalhado de logs de erro e eventos para diagnóstico.
-
-### 8. Sustentabilidade
-- Consumo eficiente de recursos para preservar a bateria de dispositivos móveis.
-- Redução de uso de dados móveis para sincronização.
+## Overview
+This document outlines the features, structure, and technical considerations for a Flashcards App similar to Anki. The app will be developed using Golang.
 
 ---
 
-## Entidades da Aplicação
+## Core Features
 
-### 1. Usuário
-- **Atributos:**
-  - ID
-  - Nome
-  - E-mail
-  - Senha (criptografada)
-  - Data de criação
-  - Configurações de personalização (tema, notificações, idioma)
-- **Ações:**
-  - Criar conta
-  - Editar perfil
-  - Alterar senha
-  - Excluir conta
+### 1. **Deck Management**
+   - **Create Decks**: Users can create decks to organize flashcards.
+   - **Edit Decks**: Rename, delete, or reorganize decks.
+   - **Import/Export Decks**: Support for importing and exporting decks in standard formats (e.g., CSV, JSON).
 
-### 2. Flashcard
-- **Atributos:**
-  - ID
-  - Frente (texto, imagem ou áudio)
-  - Verso (texto, imagem ou áudio)
-  - Data de criação
-  - Última revisão
-  - Status (fácil, médio, difícil)
-- **Ações:**
-  - Criar flashcard
-  - Editar flashcard
-  - Excluir flashcard
+### 2. **Flashcard Management**
+   - **Add Flashcards**: Users can add new flashcards to a deck.
+   - **Edit Flashcards**: Modify the content of existing flashcards.
+   - **Delete Flashcards**: Remove flashcards from a deck.
+   - **Bulk Actions**: Add, edit, or delete multiple flashcards at once.
 
-### 3. Deck
-- **Atributos:**
-  - ID
-  - Nome
-  - Descrição
-  - Categoria
-  - Lista de flashcards
-  - Data de criação
-  - Visibilidade (privado/público)
-- **Ações:**
-  - Criar deck
-  - Editar deck
-  - Compartilhar deck
-  - Excluir deck
+### 3. **Study Modes**
+   - **Review Mode**: Flashcards are shown based on a spaced repetition algorithm.
+   - **Test Mode**: Users can test themselves on a deck with a set number of random cards.
+   - **Custom Study**: Users can study specific tags, difficult cards, or new cards.
 
-### 4. Comunidade
-- **Atributos:**
-  - ID do deck
-  - Usuário criador
-  - Avaliações (estrelas ou curtidas)
-  - Comentários
-  - Número de downloads
-- **Ações:**
-  - Publicar deck
-  - Avaliar deck
-  - Comentar em decks
+### 4. **Spaced Repetition Algorithm**
+   - **Algorithm Implementation**: Implement a spaced repetition algorithm (e.g., SM-2 or FSRS).
+   - **Scheduling**: Cards are scheduled for review based on user performance.
+   - **Adjustable Intervals**: Allow users to adjust intervals for reviews.
 
-### 5. Relatório
-- **Atributos:**
-  - ID do usuário
-  - Estatísticas de desempenho (acertos, erros, tempo de estudo)
-  - Flashcards mais difíceis
-  - Histórico de progresso
-- **Ações:**
-  - Gerar relatório
-  - Exibir resumo de desempenho
+### 5. **Card Types**
+   - **Basic**: Front and back of the card.
+   - **Cloze Deletion**: Text with hidden parts (e.g., "The capital of France is {{Paris}}.").
+   - **Image Occlusion**: Images with hidden parts for memorization.
+   - **Custom Templates**: Allow users to create custom card templates.
+
+### 6. **Media Support**
+   - **Images**: Support for adding images to flashcards.
+   - **Audio**: Support for adding audio clips to flashcards.
+   - **Video**: Support for embedding videos (optional).
+
+### 7. **Tagging and Categorization**
+   - **Tags**: Users can add tags to flashcards for easy filtering.
+   - **Categories**: Organize decks into categories or folders.
+
+### 8. **Statistics and Progress Tracking**
+   - **Review History**: Track the history of reviews for each card.
+   - **Performance Metrics**: Show metrics like success rate, cards reviewed, and time spent.
+   - **Progress Graphs**: Visualize progress over time with graphs.
+
+### 9. **User Profiles**
+   - **Account Creation**: Users can create accounts to sync data.
+   - **Data Sync**: Sync decks and progress across devices.
+   - **Backup and Restore**: Allow users to backup and restore their data.
+
+### 10. **Customization**
+   - **Themes**: Light and dark mode support.
+   - **Card Styling**: Customize font size, color, and style for cards.
+   - **Keyboard Shortcuts**: Add shortcuts for faster navigation.
 
 ---
-Essas entidades definem a estrutura básica da aplicação e as interações principais. Ajustes podem ser feitos conforme necessário.
+
+## Technical Considerations
+
+### 1. **Backend (Golang)**
+   - **Database**: Use a database (e.g., SQLite, PostgreSQL) to store decks, cards, and user data.
+   - **API**: Create a RESTful or GraphQL API for frontend-backend communication.
+   - **Spaced Repetition Logic**: Implement the spaced repetition algorithm in Golang.
+   - **File Handling**: Handle media files (images, audio, video) and store them efficiently.
+
+### 2. **Frontend (Optional)**
+   - **Web Frontend**: Use a framework like React, Vue.js, or Svelte for a web-based UI.
+   - **Mobile Frontend**: Consider using Flutter or React Native for cross-platform mobile apps.
+   - **Desktop Frontend**: Use a framework like Electron for a desktop app.
+
+### 3. **Data Formats**
+   - **Deck Export/Import**: Use JSON or CSV for deck sharing.
+   - **Media Files**: Store media files in a dedicated directory or cloud storage.
+
+### 4. **Deployment**
+   - **Web App**: Deploy the app using Docker, Kubernetes, or a cloud provider (e.g., AWS, GCP).
+   - **Mobile App**: Publish the app on Google Play and Apple App Store.
+   - **Desktop App**: Package the app for Windows, macOS, and Linux.
+
+---
+
+## Example Data Structures (Golang)
+
+### Deck Structure
+```go
+type Deck struct {
+    ID          string    `json:"id"`
+    Name        string    `json:"name"`
+    Description string    `json:"description"`
+    CreatedAt   time.Time `json:"created_at"`
+    UpdatedAt   time.Time `json:"updated_at"`
+    Cards       []Flashcard    `json:"cards"`
+}
+```
+
+### Flashcard Structure 
+
+```go
+type CardState string
+
+const (
+	New      CardState = "new"
+	Learning CardState = "learning"
+	Review   CardState = "review"
+	Lapsed   CardState = "lapsed"
+)
+
+type Flashcard struct {
+	ID           uuid.UUID             `json:"id"`
+	DeckID       uuid.UUID             `json:"deck_id" validate:"required"`
+	Front        string                `json:"front" validate:"required"`
+	Back         string                `json:"back" validate:"required"`
+	CreatedAt    time.Time             `json:"created_at" validate:"required"`
+	LastReviewAt sql.NullableTime `json:"last_review_at"`
+	NextReviewAt sql.NullableTime `json:"next_review_at"`
+	State        CardState             `json:"state"`
+	EaseFactor   float64               `json:"ease_factor"`
+	Interval     time.Duration         `json:"interval"`
+}
+```
