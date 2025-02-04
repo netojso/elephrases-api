@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"time"
+
 	"github.com/netojso/elephrases-api/domain"
 )
 
@@ -14,8 +16,18 @@ func NewFlashcardUsecase(flashcardRepo domain.FlashcardRepository) domain.Flashc
 	}
 }
 
+func (fu *FlashcardUsecase) GetDueFlashcards() ([]domain.Flashcard, error) {
+	return fu.flashcardRepo.FindAll(
+		&domain.Options{
+			Where: map[string]interface{}{
+				"next_review_at <= ?": time.Now(),
+			},
+		},
+	)
+}
+
 func (fu *FlashcardUsecase) GetAll() ([]domain.Flashcard, error) {
-	return fu.flashcardRepo.FindAll()
+	return fu.flashcardRepo.FindAll(nil)
 }
 
 func (fu *FlashcardUsecase) GetByID(id string) (domain.Flashcard, error) {
@@ -30,14 +42,14 @@ func (fu *FlashcardUsecase) Update(flashcard domain.Flashcard) error {
 	return fu.flashcardRepo.Update(flashcard)
 }
 
-func (fu *FlashcardUsecase) UpdateReview(id string, response string) error {
+func (fu *FlashcardUsecase) Review(id string, response string) error {
 	flashcard, err := fu.flashcardRepo.FindByID(id)
 
 	if err != nil {
 		return err
 	}
 
-	flashcard.UpdateReview(response, nil)
+	flashcard.ReviewFlashcard(response, nil)
 
 	return fu.flashcardRepo.Update(flashcard)
 }

@@ -61,7 +61,7 @@ func NewFlashcard(
 	return flashcard, nil
 }
 
-func (f *Flashcard) UpdateReview(response string, settings *Settings) {
+func (f *Flashcard) ReviewFlashcard(response string, settings *Settings) {
 	f.LastReviewAt = internal.NewNullableTime(time.Now())
 
 	if f.State == New {
@@ -134,8 +134,12 @@ func (f *Flashcard) UpdateReview(response string, settings *Settings) {
 
 }
 
+type Options struct {
+	Where map[string]interface{}
+}
+
 type FlashcardRepository interface {
-	FindAll() ([]Flashcard, error)
+	FindAll(options *Options) ([]Flashcard, error)
 	FindByID(id string) (Flashcard, error)
 	Save(flashcard Flashcard) error
 	Update(flashcard Flashcard) error
@@ -143,10 +147,11 @@ type FlashcardRepository interface {
 }
 
 type FlashcardUsecase interface {
+	GetDueFlashcards() ([]Flashcard, error)
 	GetAll() ([]Flashcard, error)
 	GetByID(id string) (Flashcard, error)
 	Create(flashcard Flashcard) error
 	Update(flashcard Flashcard) error
-	UpdateReview(id string, response string) error
+	Review(id string, response string) error
 	Delete(id string) error
 }

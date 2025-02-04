@@ -13,12 +13,23 @@ func NewFlashcardRepository(db *gorm.DB) domain.FlashcardRepository {
 	return &FlashcardRepository{DB: db}
 }
 
-func (r *FlashcardRepository) FindAll() ([]domain.Flashcard, error) {
+func (r *FlashcardRepository) FindAll(options *domain.Options) ([]domain.Flashcard, error) {
 	flashcards := []domain.Flashcard{}
-	err := r.DB.Find(&flashcards).Error
+
+	db := r.DB
+
+	if options != nil {
+		for key, value := range options.Where {
+			db = db.Where(key, value)
+		}
+	}
+
+	err := db.Find(&flashcards).Error
+
 	if err != nil {
 		return nil, err
 	}
+
 	return flashcards, nil
 }
 

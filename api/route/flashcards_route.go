@@ -14,6 +14,10 @@ func NewFlashcardRoute(db *gorm.DB, group *gin.RouterGroup) {
 		FlashcardUsecase: usecase.NewFlashcardUsecase(fr),
 	}
 
+	group.GET("/flashcards/due", fc.GetDueFlashcards)
+
+	group.POST("/flashcards/review", fc.Review)
+
 	group.GET("/flashcards", fc.GetAll)
 
 	group.GET("/flashcards/:id", fc.GetByID)

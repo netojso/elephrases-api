@@ -11,6 +11,37 @@ type FlashcardController struct {
 	FlashcardUsecase domain.FlashcardUsecase
 }
 
+func (fc *FlashcardController) GetDueFlashcards(ctx *gin.Context) {
+	flashcards, err := fc.FlashcardUsecase.GetDueFlashcards()
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, flashcards)
+}
+
+func (fc *FlashcardController) Review(ctx *gin.Context) {
+
+	var body struct {
+		FlashCardID string `json:"flashcard_id" binding:"required"`
+		Response    string `json:"response" binding:"required"`
+	}
+
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := fc.FlashcardUsecase.Review(body.FlashCardID, body.Response); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, nil)
+}
+
 func (fc *FlashcardController) GetAll(ctx *gin.Context) {
 
 	flashcards, err := fc.FlashcardUsecase.GetAll()
