@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE flashcards (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     front TEXT NOT NULL,
