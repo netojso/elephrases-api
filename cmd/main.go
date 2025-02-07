@@ -1,27 +1,25 @@
 package main
 
 import (
-	"time"
-
 	"github.com/gin-gonic/gin"
-	"github.com/netojso/elephrases-api/api/route"
-	"github.com/netojso/elephrases-api/bootstrap"
+	"github.com/netojso/elephrases-api/config"
+	"github.com/netojso/elephrases-api/internal/adapters/router"
 )
 
 func main() {
+	cfg, err := config.LoadConfig()
 
-	app := bootstrap.App()
+	if err != nil {
+		panic(err)
+	}
 
-	env := app.Env
+	db := config.NewPostgresDatabase(cfg)
 
-	db := app.Db
-	defer app.CloseDBConnection()
-
-	timeout := time.Duration(env.ContextTimeout) * time.Second
+	defer config.ClosePostgresDBConnection(db)
 
 	gin := gin.Default()
 
-	route.Setup(env, timeout, db, gin)
+	router.Setup(cfg, db, gin)
 
-	gin.Run(env.ServerAddress)
+	gin.Run(cfg.ServerAddress)
 }
