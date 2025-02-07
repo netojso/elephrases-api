@@ -1,0 +1,12 @@
+package portservice
+
+import "github.com/netojso/elephrases-api/internal/core/domain"
+
+type UserService interface {
+	Create(user *domain.User) error
+	Fetch() ([]*domain.User, error)
+	GetByEmail(email string) (*domain.User, error)
+	GetByID(id string) (*domain.User, error)
+	UpdateUser(id string, user *domain.User) error
+	DeleteUser(id string) error
+}
