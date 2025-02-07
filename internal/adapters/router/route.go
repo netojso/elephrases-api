@@ -19,4 +19,5 @@ func Setup(env *config.Env, db *gorm.DB, gin *gin.Engine) {
 	// All Private APIs
 	NewFlashcardRouter(db, protectedRouter)
 	NewUsersRouter(db, protectedRouter)
+	NewDeckRouter(db, protectedRouter)
 }

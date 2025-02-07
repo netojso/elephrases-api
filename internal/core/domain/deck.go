@@ -8,13 +8,13 @@ import (
 )
 
 type Deck struct {
-	ID          pkg.UUID
-	Name        string
-	Description nullable.NullableString
-	Category    string
-	Visibility  string
-	CreatedAt   time.Time
-	Flashcards  []Flashcard
+	ID          pkg.UUID                `json:"id"`
+	Name        string                  `json:"name"`
+	Description nullable.NullableString `json:"description"`
+	Category    string                  `json:"category"`
+	Visibility  string                  `json:"visibility"`
+	CreatedAt   time.Time               `json:"created_at"`
+	Flashcards  []Flashcard             `json:"flashcards"`
 }
 
 func NewDeck(name string, description string, category string, visibility string) *Deck {

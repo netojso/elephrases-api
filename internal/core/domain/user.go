@@ -8,7 +8,7 @@ import (
 type User struct {
 	ID          pkg.UUID                `json:"id"`
 	FullName    nullable.NullableString `json:"full_name"`
-	Password    string                  `json:"password"`
+	Password    string                  `json:"-"`
 	Email       string                  `json:"email"`
 	PhoneNumber nullable.NullableString `json:"phone_number"`
 }

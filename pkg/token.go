@@ -41,16 +41,12 @@ func CreateRefreshToken(object map[string]interface{}, secret string, expiry int
 }
 
 func IsAuthorized(requestToken string, secret string) (bool, error) {
-	token, err := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
+	token, _ := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(secret), nil
 	})
-
-	if err != nil {
-		return false, err
-	}
 
 	if !token.Valid {
 		return false, fmt.Errorf("invalid token")
