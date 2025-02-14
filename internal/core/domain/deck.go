@@ -10,7 +10,7 @@ import (
 type Deck struct {
 	ID          pkg.UUID                `json:"id"`
 	Name        string                  `json:"name"`
-	Description nullable.NullableString `json:"description"`
+	Description nullable.NullableString `json:"description" swaggertype:"string"`
 	Category    string                  `json:"category"`
 	Visibility  string                  `json:"visibility"`
 	CreatedAt   time.Time               `json:"created_at"`

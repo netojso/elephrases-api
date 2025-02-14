@@ -13,12 +13,10 @@ func NewDeckRouter(db *gorm.DB, r *gin.RouterGroup) {
 	service := service.NewDeckUsecase(repository)
 	handler := handler.NewDeckHandler(service)
 
-	router := r.Group("/decks")
-
-	router.GET("/", handler.GetAll)
-	router.GET("/:id", handler.GetByID)
-	router.POST("/", handler.Create)
-	router.PUT("/:id", handler.Update)
-	router.DELETE("/:id", handler.Delete)
+	r.GET("/decks", handler.GetAll)
+	r.GET("/decks/:id", handler.GetByID)
+	r.POST("/decks", handler.Create)
+	r.PUT("/decks/:id", handler.Update)
+	r.DELETE("/decks/:id", handler.Delete)
 
 }

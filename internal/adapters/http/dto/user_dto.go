@@ -6,8 +6,8 @@ import (
 )
 
 type UpdateUserDTO struct {
-	FullName    string `json:"full_name"`
-	PhoneNumber string `json:"phone_number"`
+	FullName    nullable.NullableString `json:"full_name"`
+	PhoneNumber nullable.NullableString `json:"phone_number"`
 }
 
 type ResponseUserDTO struct {

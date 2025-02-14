@@ -19,6 +19,15 @@ func NewDeckHandler(deckService portservice.DeckService) *DeckHandler {
 	}
 }
 
+// GetAll godoc
+// @Summary Get all decks
+// @Description Get all decks
+// @Tags Decks
+// @Produce  json
+// @Security BearerAuth
+// @Success 200 {array} domain.Deck
+// @Failure 404 {object} object{error=string}
+// @Router /decks [get]
 func (dh *DeckHandler) GetAll(ctx *gin.Context) {
 	decks, err := dh.deckService.GetAll()
 	if err != nil {
@@ -28,6 +37,17 @@ func (dh *DeckHandler) GetAll(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, decks)
 }
 
+// GetByID godoc
+// @Summary Get a deck by ID
+// @Description Get a deck by ID
+// @Tags Decks
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Success 200 {object} domain.Deck
+// @Failure 404 {object} object{error=string}
+// @Router /decks/{id} [get]
 func (dh *DeckHandler) GetByID(ctx *gin.Context) {
 	id := ctx.Param("id")
 	deck, err := dh.deckService.GetByID(id)
@@ -38,6 +58,19 @@ func (dh *DeckHandler) GetByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, deck)
 }
 
+// Create godoc
+// @Summary Create a new deck
+// @Description Create a new deck
+// @Tags Decks
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param deck body dto.CreateDeckDTO true "Create Deck DTO"
+// @Success 201
+// @Failure 400 {object} object{error=string}
+// @Failure 404 {object} object{error=string}
+// @Failure 500 {object} object{error=string}
+// @Router /decks [post]
 func (dh *DeckHandler) Create(ctx *gin.Context) {
 	var body *dto.CreateDeckDTO
 
@@ -53,9 +86,23 @@ func (dh *DeckHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, deck)
+	ctx.JSON(http.StatusCreated, nil)
 }
 
+// Update godoc
+// @Summary Update a deck
+// @Description Update a deck
+// @Tags Decks
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Param deck body domain.Deck true "Update Deck"
+// @Success 200 {object} domain.Deck
+// @Failure 400 {object} object{error=string}
+// @Failure 404 {object} object{error=string}
+// @Failure 500 {object} object{error=string}
+// @Router /decks/{id} [put]
 func (dh *DeckHandler) Update(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -79,6 +126,17 @@ func (dh *DeckHandler) Update(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, deck)
 }
 
+// Delete godoc
+// @Summary Delete a deck
+// @Description Delete a deck
+// @Tags Decks
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Success 204
+// @Failure 500 {object} object{error=string}
+// @Router /decks/{id} [delete]
 func (dh *DeckHandler) Delete(ctx *gin.Context) {
 	id := ctx.Param("id")
 

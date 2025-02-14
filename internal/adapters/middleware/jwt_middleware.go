@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -23,6 +24,8 @@ func JwtAuthMiddleware(secret string) gin.HandlerFunc {
 					c.Abort()
 					return
 				}
+
+				log.Println("User ID: ", userID)
 
 				c.Set("x-user-id", userID)
 				c.Next()

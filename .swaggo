@@ -1,0 +1,7 @@
+replace database/sql.NullString string
+replace database/sql.NullTime int
+replace database/sql.NullBool bool
+replace uuid.UUID string
+replace time.Duration int
+replace nullable.NullableTime int
+replace nullable.NullableString string
