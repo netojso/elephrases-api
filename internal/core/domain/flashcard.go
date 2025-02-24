@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/netojso/elephrases-api/pkg"
@@ -11,23 +11,23 @@ import (
 type CardState string
 
 const (
-	New      CardState = "new"
-	Learning CardState = "learning"
-	Review   CardState = "review"
-	Lapsed   CardState = "lapsed"
+	StateNew      CardState = "new"
+	StateLearning CardState = "learning"
+	StateReview   CardState = "review"
 )
 
 type Flashcard struct {
-	ID           pkg.UUID              `json:"id"`
-	DeckID       pkg.UUID              `json:"deck_id"`
-	Front        string                `json:"front"`
-	Back         string                `json:"back"`
-	CreatedAt    time.Time             `json:"created_at"`
-	LastReviewAt nullable.NullableTime `json:"last_review_at"`
-	NextReviewAt nullable.NullableTime `json:"next_review_at"`
-	State        CardState             `json:"state"`
-	EaseFactor   float64               `json:"ease_factor"`
-	Interval     time.Duration         `json:"interval"`
+	ID           pkg.UUID                `json:"id"`
+	DeckID       pkg.UUID                `json:"deck_id"`
+	MediaUrl     nullable.NullableString `json:"media_url"`
+	Front        string                  `json:"front"`
+	Back         string                  `json:"back"`
+	CreatedAt    time.Time               `json:"created_at"`
+	LastReviewAt nullable.NullableTime   `json:"last_review_at"`
+	NextReviewAt nullable.NullableTime   `json:"next_review_at"`
+	State        CardState               `json:"state"`
+	EaseFactor   float64                 `json:"ease_factor"`
+	Interval     time.Duration           `json:"interval"`
 }
 
 type Settings struct {
@@ -36,24 +36,26 @@ type Settings struct {
 	EasyInterval       time.Duration
 }
 
-func NewFlashcard(deckID pkg.UUID, front string, back string) *Flashcard {
+func NewFlashcard(deckID pkg.UUID, front string, back string, media string) *Flashcard {
 	return &Flashcard{
 		ID:        pkg.NewUUID(),
 		DeckID:    deckID,
 		Front:     front,
 		Back:      back,
 		CreatedAt: time.Now(),
-		State:     New,
+		State:     StateNew,
+		MediaUrl:  nullable.NewNullableString(media),
 	}
 }
 
 func (f *Flashcard) ReviewFlashcard(response string, settings *Settings) {
-	f.LastReviewAt = nullable.NewNullableTime(time.Now())
+	// Set last review time
+	now := time.Now()
+	f.LastReviewAt = nullable.NewNullableTime(now)
 
-	if f.State == New {
-		f.State = Learning
-	}
+	log.Println(response)
 
+	// Default settings if nil
 	if settings == nil {
 		settings = &Settings{
 			LearningSteps:      []time.Duration{time.Minute, 10 * time.Minute},
@@ -62,61 +64,61 @@ func (f *Flashcard) ReviewFlashcard(response string, settings *Settings) {
 		}
 	}
 
+	// Transition New to Learning and initialize interval
+	if f.State == StateNew {
+		f.State = StateLearning
+		f.Interval = settings.LearningSteps[0] // Start at 1 minute
+	}
+
+	// Handle response
 	switch response {
 	case "again":
 		f.Interval = settings.LearningSteps[0]
-		f.NextReviewAt = nullable.NewNullableTime(time.Now().Add(f.Interval))
+		f.NextReviewAt = nullable.NewNullableTime(now.Add(f.Interval))
+
 	case "good":
-		if f.State == New {
-			f.Interval = settings.LearningSteps[0]
-			f.NextReviewAt = nullable.NewNullableTime(time.Now().Add(f.Interval))
-		}
-
-		if f.State == Learning {
-			if f.Interval == settings.LearningSteps[len(settings.LearningSteps)-1] {
-				f.State = Review
+		log.Println(f)
+		if f.State == StateLearning {
+			currentStep := f.findLearningStepIndex(settings.LearningSteps)
+			log.Println(currentStep)
+			if currentStep == len(settings.LearningSteps)-1 {
+				f.State = StateReview
 				f.Interval = settings.GraduatingInterval
-				f.NextReviewAt = nullable.NewNullableTime(time.Now().Add(f.Interval))
+				f.NextReviewAt = nullable.NewNullableTime(now.Add(f.Interval))
 			} else {
-				find_index := -1
-				for i, v := range settings.LearningSteps {
-					if v == f.Interval {
-						find_index = i
-						break
-					}
-				}
-				f.Interval = settings.LearningSteps[find_index+1]
-				f.NextReviewAt = nullable.NewNullableTime(time.Now().Add(f.Interval))
+				f.Interval = settings.LearningSteps[currentStep+1]
+				f.NextReviewAt = nullable.NewNullableTime(now.Add(f.Interval))
 			}
 		}
-	case "hard":
-		fmt.Println(f.State)
-		if f.State == Learning {
-			fmt.Println(settings.LearningSteps)
-			if f.Interval == settings.LearningSteps[0] {
-				if len(settings.LearningSteps) > 1 {
-					average := (settings.LearningSteps[0] + settings.LearningSteps[1]) / 2
-					fmt.Println(average)
-					f.Interval = average
-					f.NextReviewAt = nullable.NewNullableTime(time.Now().Add(f.Interval))
-				} else {
-					hard_delay := time.Duration(1.5 * float64(settings.LearningSteps[0]))
-					if hard_delay > settings.LearningSteps[0]+24*time.Hour {
-						hard_delay = settings.LearningSteps[0] + 24*time.Hour
-					}
 
-					f.Interval = hard_delay
-					f.NextReviewAt = nullable.NewNullableTime(time.Now().Add(f.Interval))
+	case "hard":
+		if f.State == StateLearning {
+			if f.Interval == settings.LearningSteps[0] && len(settings.LearningSteps) > 1 {
+				f.Interval = (settings.LearningSteps[0] + settings.LearningSteps[1]) / 2
+			} else if len(settings.LearningSteps) == 1 {
+				f.Interval = time.Duration(1.5 * float64(settings.LearningSteps[0]))
+				if f.Interval > settings.LearningSteps[0]+24*time.Hour {
+					f.Interval = settings.LearningSteps[0] + 24*time.Hour
 				}
-			} else {
-				f.NextReviewAt = nullable.NewNullableTime(time.Now().Add(f.Interval))
 			}
+			f.NextReviewAt = nullable.NewNullableTime(now.Add(f.Interval))
 		}
 
 	case "easy":
-		f.State = Review
+		f.State = StateReview
 		f.Interval = settings.EasyInterval
-		f.NextReviewAt = nullable.NewNullableTime(time.Now().Add(f.Interval))
-	}
+		f.NextReviewAt = nullable.NewNullableTime(now.Add(f.Interval))
 
+	default:
+		f.NextReviewAt = nullable.NewNullableTime(now.Add(f.Interval))
+	}
+}
+
+func (f *Flashcard) findLearningStepIndex(steps []time.Duration) int {
+	for i, step := range steps {
+		if f.Interval == step {
+			return i
+		}
+	}
+	return 0 // Default to first step if not found
 }

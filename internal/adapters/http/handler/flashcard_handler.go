@@ -1,21 +1,31 @@
 package handler
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/netojso/elephrases-api/internal/adapters/http/dto"
 	"github.com/netojso/elephrases-api/internal/core/domain"
+	portrepository "github.com/netojso/elephrases-api/internal/core/ports/repository"
 	portservice "github.com/netojso/elephrases-api/internal/core/ports/service"
 	"github.com/netojso/elephrases-api/pkg"
 )
 
 type FlashcardHandler struct {
 	service portservice.FlashcardService
+	storage portrepository.StoragePort
 }
 
-func NewFlashcardHandler(service portservice.FlashcardService) *FlashcardHandler {
-	return &FlashcardHandler{service: service}
+func NewFlashcardHandler(
+	service portservice.FlashcardService,
+	storage portrepository.StoragePort,
+) *FlashcardHandler {
+	return &FlashcardHandler{
+		service: service,
+		storage: storage,
+	}
 }
 
 // GetDueFlashcards godoc
@@ -109,6 +119,29 @@ func (fh FlashcardHandler) GetByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, flashcard)
 }
 
+// GetByDeckID godoc
+// @Summary Get flashcards by Deck ID
+// @Description Get all flashcards by Deck ID
+// @Tags Flashcards
+// @Produce json
+// @Security BearerAuth
+// @Param deckID path string true "Deck ID"
+// @Success 200 {array} domain.Flashcard
+// @Failure 404 {object} object{error=string}
+// @Router /flashcards/deck/{deckID} [get]
+func (fh FlashcardHandler) GetByDeckID(ctx *gin.Context) {
+	deckID := ctx.Param("deckID")
+
+	flashcards, err := fh.service.GetByDeckID(deckID)
+
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, flashcards)
+}
+
 // Create godoc
 // @Summary Create a new flashcard
 // @Description Create a new flashcard with the provided details
@@ -136,7 +169,7 @@ func (fh FlashcardHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	flashcard := domain.NewFlashcard(DeckID, body.Front, body.Back)
+	flashcard := domain.NewFlashcard(DeckID, body.Front, body.Back, body.Media)
 
 	if err := fh.service.Create(flashcard); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -144,6 +177,77 @@ func (fh FlashcardHandler) Create(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, flashcard)
+}
+
+func (fh FlashcardHandler) CreateMany(ctx *gin.Context) {
+	flashcardsJSON := ctx.PostForm("flashcards")
+
+	var flashcards []dto.CreateFlashcardDTO
+	if err := json.Unmarshal([]byte(flashcardsJSON), &flashcards); err != nil {
+		ctx.JSON(400, gin.H{"error": "Invalid JSON format"})
+		return
+	}
+
+	form, _ := ctx.MultipartForm()
+	files := form.File["media"]
+
+	for _, flashcard := range flashcards {
+		mediaName := flashcard.Media // mediaName is a pointer to a string
+		mediaData := []byte{}
+
+		if mediaName != "" {
+			for _, file := range files {
+				if file.Filename == mediaName {
+					fileContent, err := file.Open()
+					if err != nil {
+						ctx.JSON(500, gin.H{"error": "Error opening file"})
+						return
+					}
+
+					defer fileContent.Close()
+
+					fileBytes, err := io.ReadAll(fileContent)
+					if err != nil {
+						ctx.JSON(500, gin.H{"error": "Error reading file"})
+						return
+					}
+
+					mediaData = fileBytes
+					break
+				}
+			}
+
+			if len(mediaData) == 0 {
+				ctx.JSON(400, gin.H{"error": "Media file not found"})
+				return
+			}
+
+			err := fh.storage.Upload(portrepository.File{
+				Name: mediaName,
+				Data: mediaData,
+			})
+
+			if err != nil {
+				ctx.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+		}
+
+		DeckID, err := pkg.ParseUUID(flashcard.DeckID)
+
+		if err != nil {
+			ctx.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		newFlashcard := domain.NewFlashcard(DeckID, flashcard.Front, flashcard.Back, mediaName)
+
+		if err := fh.service.Create(newFlashcard); err != nil {
+			ctx.JSON(500, gin.H{"error": "Error creating flashcard"})
+			return
+		}
+	}
+
 }
 
 // Update godoc

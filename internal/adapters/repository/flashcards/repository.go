@@ -43,6 +43,16 @@ func (r *flashcardRepository) FindByID(id string) (*domain.Flashcard, error) {
 	return flashcard.ToDomain(), nil
 }
 
+func (r *flashcardRepository) FindByDeckID(deckID string) ([]*domain.Flashcard, error) {
+	flashcards := []*Flashcard{}
+	err := r.DB.Where("deck_id = ?", deckID).Find(&flashcards).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return modelToDomainSlice(flashcards), nil
+}
+
 func (r *flashcardRepository) Save(flashcard *domain.Flashcard) error {
 
 	model := domainToModel(flashcard)
@@ -55,6 +65,7 @@ func (r *flashcardRepository) Save(flashcard *domain.Flashcard) error {
 }
 
 func (r *flashcardRepository) Update(flashcard *domain.Flashcard) error {
+
 	model := domainToModel(flashcard)
 
 	err := r.DB.Save(&model).Error

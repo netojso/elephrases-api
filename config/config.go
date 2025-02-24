@@ -22,6 +22,11 @@ type Env struct {
 	RefreshTokenExpiryHour int    `mapstructure:"REFRESH_TOKEN_EXPIRY_HOUR"`
 	AccessTokenSecret      string `mapstructure:"ACCESS_TOKEN_SECRET"`
 	RefreshTokenSecret     string `mapstructure:"REFRESH_TOKEN_SECRET"`
+	AwsS3URL               string `mapstructure:"AWS_S3_URL"`
+	AwsBucketName          string `mapstructure:"AWS_BUCKET_NAME"`
+	AwsAccessKeyID         string `mapstructure:"AWS_ACCESS_KEY_ID"`
+	AwsSecretAccessKey     string `mapstructure:"AWS_SECRET_ACCESS_KEY"`
+	AwsRegion              string `mapstructure:"AWS_REGION"`
 }
 
 func LoadConfig() (*Env, error) {

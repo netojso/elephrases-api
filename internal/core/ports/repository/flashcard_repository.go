@@ -7,6 +7,7 @@ type Options struct {
 }
 
 type FlashcardRepository interface {
+	FindByDeckID(deckID string) ([]*domain.Flashcard, error)
 	FindAll(options *Options) ([]*domain.Flashcard, error)
 	FindByID(id string) (*domain.Flashcard, error)
 	Save(flashcard *domain.Flashcard) error

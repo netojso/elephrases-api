@@ -17,7 +17,32 @@ func NewDeckUsecase(repo portrepository.DeckRepository) portservice.DeckService 
 }
 
 func (ds *DeckService) GetAll() ([]*domain.Deck, error) {
-	return ds.repo.FindAll()
+	decks, err := ds.repo.FindAll()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deck := range decks {
+
+		deck.Stats.LearningCards = 0
+		deck.Stats.ReviewingCards = 0
+		deck.Stats.NewCards = 0
+
+		for _, flashcard := range deck.Flashcards {
+			switch flashcard.State {
+			case "new":
+				deck.Stats.NewCards++
+			case "learning":
+				deck.Stats.LearningCards++
+			case "review":
+				deck.Stats.ReviewingCards++
+			}
+		}
+
+	}
+
+	return decks, nil
 }
 
 func (ds *DeckService) GetByID(id string) (*domain.Deck, error) {

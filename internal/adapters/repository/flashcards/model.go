@@ -16,16 +16,17 @@ type Deck struct {
 }
 
 type Flashcard struct {
-	ID           uuid.UUID     `gorm:"type:uuid;primary_key"`
-	Front        string        `gorm:"type:text"`
-	Back         string        `gorm:"type:text"`
-	CreatedAt    time.Time     `gorm:"type:timestamp"`
-	LastReviewAt sql.NullTime  `gorm:"type:timestamp"`
-	NextReviewAt sql.NullTime  `gorm:"type:timestamp"`
-	State        string        `gorm:"type:varchar(20)"`
-	EaseFactor   float64       `gorm:"type:float"`
-	Interval     time.Duration `gorm:"type:interval"`
-	DeckID       uuid.UUID     `gorm:"foreignKey:DeckID;references:ID"`
+	ID           uuid.UUID      `gorm:"type:uuid;primary_key"`
+	Front        string         `gorm:"type:text"`
+	Back         string         `gorm:"type:text"`
+	MediaUrl     sql.NullString `gorm:"type:varchar(255)"`
+	CreatedAt    time.Time      `gorm:"type:timestamp"`
+	LastReviewAt sql.NullTime   `gorm:"type:timestamp"`
+	NextReviewAt sql.NullTime   `gorm:"type:timestamp"`
+	State        string         `gorm:"type:varchar(20)"`
+	EaseFactor   float64        `gorm:"type:float"`
+	Interval     time.Duration  `gorm:"type:interval"`
+	DeckID       uuid.UUID      `gorm:"foreignKey:DeckID;references:ID"`
 }
 
 func (f *Flashcard) TableName() string {
@@ -48,6 +49,7 @@ func (f *Flashcard) ToDomain() *domain.Flashcard {
 		DeckID:       deckID,
 		Front:        f.Front,
 		Back:         f.Back,
+		MediaUrl:     nullable.NewNullableString(f.MediaUrl.String),
 		CreatedAt:    f.CreatedAt,
 		LastReviewAt: nullable.NewNullableTime(f.LastReviewAt.Time),
 		NextReviewAt: nullable.NewNullableTime(f.NextReviewAt.Time),
@@ -63,6 +65,7 @@ func domainToModel(flashcard *domain.Flashcard) *Flashcard {
 		DeckID:       flashcard.DeckID.Value(),
 		Front:        flashcard.Front,
 		Back:         flashcard.Back,
+		MediaUrl:     flashcard.MediaUrl.NullString,
 		CreatedAt:    flashcard.CreatedAt,
 		LastReviewAt: flashcard.LastReviewAt.NullTime,
 		NextReviewAt: flashcard.NextReviewAt.NullTime,

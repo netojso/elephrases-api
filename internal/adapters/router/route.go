@@ -17,7 +17,7 @@ func Setup(env *config.Env, db *gorm.DB, gin *gin.Engine) {
 
 	protectedRouter.Use(middleware.JwtAuthMiddleware(env.AccessTokenSecret))
 	// All Private APIs
-	NewFlashcardRouter(db, protectedRouter)
+	NewFlashcardRouter(env, db, protectedRouter)
 	NewUsersRouter(db, protectedRouter)
 	NewDeckRouter(db, protectedRouter)
 }
