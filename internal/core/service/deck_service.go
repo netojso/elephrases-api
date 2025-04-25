@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/netojso/elephrases-api/internal/core/domain"
 	portrepository "github.com/netojso/elephrases-api/internal/core/ports/repository"
 	portservice "github.com/netojso/elephrases-api/internal/core/ports/service"
@@ -17,6 +19,7 @@ func NewDeckUsecase(repo portrepository.DeckRepository) portservice.DeckService 
 }
 
 func (ds *DeckService) GetAll() ([]*domain.Deck, error) {
+	dailyLimit := 20
 	decks, err := ds.repo.FindAll()
 
 	if err != nil {
@@ -26,8 +29,11 @@ func (ds *DeckService) GetAll() ([]*domain.Deck, error) {
 	for _, deck := range decks {
 
 		deck.Stats.LearningCards = 0
-		deck.Stats.ReviewingCards = 0
+		deck.Stats.ReviewCards = 0
 		deck.Stats.NewCards = 0
+		deck.Stats.TotalCards = len(deck.Flashcards)
+
+		totalReviewTotal := 0
 
 		for _, flashcard := range deck.Flashcards {
 			switch flashcard.State {
@@ -36,10 +42,20 @@ func (ds *DeckService) GetAll() ([]*domain.Deck, error) {
 			case "learning":
 				deck.Stats.LearningCards++
 			case "review":
-				deck.Stats.ReviewingCards++
+				deck.Stats.ReviewCards++
+			}
+
+			if flashcard.LastReviewAt.Valid {
+				yesterday := time.Now().Add(-24 * time.Hour)
+				if flashcard.LastReviewAt.Time.After(yesterday) {
+					totalReviewTotal++
+				}
 			}
 		}
 
+		if deck.Stats.NewCards > dailyLimit {
+			deck.Stats.NewCards = dailyLimit - totalReviewTotal
+		}
 	}
 
 	return decks, nil

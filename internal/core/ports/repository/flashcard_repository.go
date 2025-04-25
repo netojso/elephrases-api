@@ -4,6 +4,7 @@ import "github.com/netojso/elephrases-api/internal/core/domain"
 
 type Options struct {
 	Where map[string]interface{}
+	Limit int
 }
 
 type FlashcardRepository interface {

@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"log"
+
 	"github.com/netojso/elephrases-api/internal/core/domain"
 	portrepository "github.com/netojso/elephrases-api/internal/core/ports/repository"
 	"gorm.io/gorm"
@@ -23,6 +25,10 @@ func (r *flashcardRepository) FindAll(options *portrepository.Options) ([]*domai
 		for key, value := range options.Where {
 			db = db.Where(key, value)
 		}
+
+		if options.Limit > 0 {
+			db = db.Limit(options.Limit)
+		}
 	}
 
 	err := db.Find(&flashcards).Error
@@ -30,6 +36,8 @@ func (r *flashcardRepository) FindAll(options *portrepository.Options) ([]*domai
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println(flashcards)
 
 	return modelToDomainSlice(flashcards), nil
 }

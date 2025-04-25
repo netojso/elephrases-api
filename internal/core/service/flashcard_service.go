@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/netojso/elephrases-api/internal/core/domain"
@@ -16,6 +17,75 @@ type flashcardService struct {
 
 func NewFlashcardService(repo portrepository.FlashcardRepository) portservice.FlashcardService {
 	return &flashcardService{repo: repo}
+}
+
+func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
+	dailyLimit := 20
+
+	yesterday := time.Date(
+		time.Now().Year(),
+		time.Now().Month(),
+		time.Now().Day(),
+		0,
+		0,
+		0,
+		0,
+		time.Now().Location(),
+	)
+
+	fmt.Println("yesterday", yesterday)
+
+	review_today_flashcards, err := fs.repo.FindAll(
+		&portrepository.Options{
+			Where: map[string]interface{}{
+				"deck_id = ?":        deckID,
+				"last_review_at > ?": yesterday,
+			},
+		})
+
+	if err != nil {
+		return nil, err
+	}
+
+	new_flashcards, err := fs.repo.FindAll(
+		&portrepository.Options{
+			Where: map[string]interface{}{
+				"deck_id":        deckID,
+				"last_review_at": nil,
+			},
+			Limit: dailyLimit - len(review_today_flashcards),
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	due_flashcards, err := fs.repo.FindAll(
+		&portrepository.Options{
+			Where: map[string]interface{}{
+				"deck_id":             deckID,
+				"next_review_at <= ?": time.Now(),
+			},
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if new_flashcards == nil {
+		new_flashcards = []*domain.Flashcard{}
+	}
+
+	if due_flashcards == nil {
+		due_flashcards = []*domain.Flashcard{}
+	}
+
+	return &domain.Study{
+		NewCards: new_flashcards,
+		DueCards: due_flashcards,
+	}, nil
 }
 
 func (fs *flashcardService) GetDueFlashcards() ([]*domain.Flashcard, error) {

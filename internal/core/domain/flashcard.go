@@ -36,6 +36,11 @@ type Settings struct {
 	EasyInterval       time.Duration
 }
 
+type Study struct {
+	NewCards []*Flashcard `json:"new_cards"`
+	DueCards []*Flashcard `json:"due_cards"`
+}
+
 func NewFlashcard(deckID pkg.UUID, front string, back string, media string) *Flashcard {
 	return &Flashcard{
 		ID:        pkg.NewUUID(),

@@ -3,6 +3,7 @@ package portservice
 import "github.com/netojso/elephrases-api/internal/core/domain"
 
 type FlashcardService interface {
+	Study(deckID string) (*domain.Study, error)
 	GetDueFlashcards() ([]*domain.Flashcard, error)
 	GetAll() ([]*domain.Flashcard, error)
 	GetByID(id string) (*domain.Flashcard, error)

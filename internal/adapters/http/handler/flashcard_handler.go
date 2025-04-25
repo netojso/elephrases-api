@@ -48,6 +48,19 @@ func (fh FlashcardHandler) GetDueFlashcards(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, flashcards)
 }
 
+func (fh FlashcardHandler) Study(ctx *gin.Context) {
+	deckID := ctx.Param("deckID")
+
+	data, err := fh.service.Study(deckID)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, data)
+}
+
 // Review godoc
 // @Summary Review a flashcard
 // @Description Review a flashcard by providing the flashcard ID and response

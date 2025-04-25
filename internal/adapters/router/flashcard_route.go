@@ -16,6 +16,8 @@ func NewFlashcardRouter(env *config.Env, db *gorm.DB, group *gin.RouterGroup) {
 	storage, _ := storage.NewS3Adapter(env)
 	handler := handler.NewFlashcardHandler(service, storage)
 
+	group.GET("/flashcards/deck/:deckID/study", handler.Study)
+
 	group.GET("/flashcards/due", handler.GetDueFlashcards)
 
 	group.POST("/flashcards/review", handler.Review)

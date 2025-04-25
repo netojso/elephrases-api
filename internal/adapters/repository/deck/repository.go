@@ -53,7 +53,7 @@ func (r *DeckRepository) Update(deck *domain.Deck) error {
 }
 
 func (r *DeckRepository) Delete(id string) error {
-	err := r.DB.Delete(&Deck{}, id).Error
+	err := r.DB.Where("id = ?", id).Delete(&Deck{}).Error
 	if err != nil {
 		return err
 	}

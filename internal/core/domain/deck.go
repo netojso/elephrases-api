@@ -8,9 +8,10 @@ import (
 )
 
 type Stats struct {
-	NewCards       int `json:"new_cards"`
-	LearningCards  int `json:"learning_cards"`
-	ReviewingCards int `json:"reviewing_cards"`
+	NewCards      int `json:"new_cards"`
+	LearningCards int `json:"learning_cards"`
+	ReviewCards   int `json:"review_cards"`
+	TotalCards    int `json:"total_cards"`
 }
 type Deck struct {
 	ID          pkg.UUID                `json:"id"`
