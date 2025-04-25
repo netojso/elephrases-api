@@ -88,13 +88,21 @@ This document outlines the features, structure, and technical considerations for
 
 ### Deck Structure
 ```go
+type Settings struct {
+    LearningSteps      []time.Duration
+    GraduatingInterval time.Duration
+    EasyInterval       time.Duration
+}
+
 type Deck struct {
-    ID          string    `json:"id"`
-    Name        string    `json:"name"`
-    Description string    `json:"description"`
-    CreatedAt   time.Time `json:"created_at"`
-    UpdatedAt   time.Time `json:"updated_at"`
-    Cards       []Flashcard    `json:"cards"`
+    ID          uuid.UUID
+    Name        string
+    Description pkg.NullableString
+    Category    string
+    Visibility  string
+    CreatedAt   time.Time
+    Flashcards  []Flashcard
+    // Settings    *Settings
 }
 ```
 
@@ -104,22 +112,34 @@ type Deck struct {
 type CardState string
 
 const (
-	New      CardState = "new"
-	Learning CardState = "learning"
-	Review   CardState = "review"
-	Lapsed   CardState = "lapsed"
+    New      CardState = "new"
+    Learning CardState = "learning"
+    Review   CardState = "review"
+    Lapsed   CardState = "lapsed"
 )
 
 type Flashcard struct {
-	ID           uuid.UUID             `json:"id"`
-	DeckID       uuid.UUID             `json:"deck_id" validate:"required"`
-	Front        string                `json:"front" validate:"required"`
-	Back         string                `json:"back" validate:"required"`
-	CreatedAt    time.Time             `json:"created_at" validate:"required"`
-	LastReviewAt sql.NullableTime `json:"last_review_at"`
-	NextReviewAt sql.NullableTime `json:"next_review_at"`
-	State        CardState             `json:"state"`
-	EaseFactor   float64               `json:"ease_factor"`
-	Interval     time.Duration         `json:"interval"`
+    ID           uuid.UUID
+    DeckID       uuid.UUID
+    Front        string
+    Back         string
+    CreatedAt    time.Time
+    LastReviewAt pkg.NullableTime
+    NextReviewAt pkg.NullableTime
+    State        CardState
+    EaseFactor   float64
+    Interval     time.Duration
+}
+```
+
+### User Structure
+
+```go
+type User struct {
+    ID          string
+    FullName    pkg.NullableString
+    Password    string
+    Email       string
+    PhoneNumber pkg.NullableString
 }
 ```
