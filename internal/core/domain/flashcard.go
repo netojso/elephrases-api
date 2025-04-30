@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"log"
 	"time"
 
 	"github.com/netojso/elephrases-api/pkg"
@@ -58,8 +57,6 @@ func (f *Flashcard) ReviewFlashcard(response string, settings *Settings) {
 	now := time.Now()
 	f.LastReviewAt = nullable.NewNullableTime(now)
 
-	log.Println(response)
-
 	// Default settings if nil
 	if settings == nil {
 		settings = &Settings{
@@ -82,10 +79,8 @@ func (f *Flashcard) ReviewFlashcard(response string, settings *Settings) {
 		f.NextReviewAt = nullable.NewNullableTime(now.Add(f.Interval))
 
 	case "good":
-		log.Println(f)
 		if f.State == StateLearning {
 			currentStep := f.findLearningStepIndex(settings.LearningSteps)
-			log.Println(currentStep)
 			if currentStep == len(settings.LearningSteps)-1 {
 				f.State = StateReview
 				f.Interval = settings.GraduatingInterval

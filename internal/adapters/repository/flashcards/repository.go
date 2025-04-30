@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"log"
-
 	"github.com/netojso/elephrases-api/internal/core/domain"
 	portrepository "github.com/netojso/elephrases-api/internal/core/ports/repository"
 	"gorm.io/gorm"
@@ -36,8 +34,6 @@ func (r *flashcardRepository) FindAll(options *portrepository.Options) ([]*domai
 	if err != nil {
 		return nil, err
 	}
-
-	log.Println(flashcards)
 
 	return modelToDomainSlice(flashcards), nil
 }

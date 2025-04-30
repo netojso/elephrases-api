@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/netojso/elephrases-api/internal/core/domain"
@@ -32,8 +31,6 @@ func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
 		0,
 		time.Now().Location(),
 	)
-
-	fmt.Println("yesterday", yesterday)
 
 	review_today_flashcards, err := fs.repo.FindAll(
 		&portrepository.Options{
