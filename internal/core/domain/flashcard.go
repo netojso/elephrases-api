@@ -56,9 +56,9 @@ func NewFlashcard(deckID pkg.UUID, front string, back string, media string) *Fla
 	}
 }
 
-func (f *Flashcard) ReviewFlashcard(response string, settings *Settings) {
+// ReviewFlashcard aplica a resposta do usuário ao cartão no instante now.
+func (f *Flashcard) ReviewFlashcard(response string, settings *Settings, now time.Time) {
 	// Set last review time
-	now := time.Now()
 	f.LastReviewAt = nullable.NewNullableTime(now)
 
 	// Default settings if nil

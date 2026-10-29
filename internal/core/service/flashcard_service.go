@@ -15,21 +15,37 @@ type flashcardService struct {
 	repo    portrepository.FlashcardRepository
 	reviews portrepository.ReviewRepository
 	tx      portrepository.TxManager
+	now     func() time.Time
+}
+
+// FlashcardServiceOption personaliza o flashcardService.
+type FlashcardServiceOption func(*flashcardService)
+
+// WithClock substitui time.Now; usado nos testes para tornar o tempo determinístico.
+func WithClock(now func() time.Time) FlashcardServiceOption {
+	return func(fs *flashcardService) {
+		fs.now = now
+	}
 }
 
 func NewFlashcardService(
 	repo portrepository.FlashcardRepository,
 	reviews portrepository.ReviewRepository,
 	tx portrepository.TxManager,
+	opts ...FlashcardServiceOption,
 ) portservice.FlashcardService {
-	return &flashcardService{repo: repo, reviews: reviews, tx: tx}
+	fs := &flashcardService{repo: repo, reviews: reviews, tx: tx, now: time.Now}
+	for _, opt := range opts {
+		opt(fs)
+	}
+	return fs
 }
 
 // dailyNewCardLimit é o máximo de cartões estudados por deck por dia.
 const dailyNewCardLimit = 20
 
 func (fs *flashcardService) Study(ctx context.Context, deckID string) (*domain.Study, error) {
-	return fs.repo.FindStudyQueue(ctx, deckID, dailyNewCardLimit, time.Now())
+	return fs.repo.FindStudyQueue(ctx, deckID, dailyNewCardLimit, fs.now())
 }
 
 func (fs *flashcardService) GetDueFlashcards(ctx context.Context) ([]*domain.Flashcard, error) {
@@ -37,7 +53,7 @@ func (fs *flashcardService) GetDueFlashcards(ctx context.Context) ([]*domain.Fla
 		ctx,
 		&portrepository.Options{
 			Where: map[string]interface{}{
-				"next_review_at <= ?": time.Now(),
+				"next_review_at <= ?": fs.now(),
 			},
 		},
 	)
@@ -86,14 +102,15 @@ func (fs *flashcardService) Review(ctx context.Context, id string, response stri
 		}
 
 		previousState := flashcard.State
+		now := fs.now()
 
-		flashcard.ReviewFlashcard(response, nil)
+		flashcard.ReviewFlashcard(response, nil, now)
 
 		if err := fs.repo.Update(ctx, flashcard); err != nil {
 			return err
 		}
 
-		return fs.reviews.Save(ctx, domain.NewReview(flashcard, response, previousState, flashcard.LastReviewAt.Time))
+		return fs.reviews.Save(ctx, domain.NewReview(flashcard, response, previousState, now))
 	})
 }
 
