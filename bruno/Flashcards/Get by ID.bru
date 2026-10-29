@@ -1,0 +1,11 @@
+meta {
+  name: Get by ID
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/flashcards/{{flashcardId}}
+  body: none
+  auth: inherit
+}

@@ -1,0 +1,11 @@
+meta {
+  name: Delete
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{baseUrl}}/flashcards/{{flashcardId}}
+  body: none
+  auth: inherit
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Study queue
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/flashcards/deck/{{deckId}}/study
+  body: none
+  auth: inherit
+}
+
+docs {
+  Fila do dia: `new_cards` (limitados ao que resta do limite diário de 20) e `due_cards`.
+}

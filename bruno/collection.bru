@@ -1,0 +1,17 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  # Elephrases API
+
+  1. Selecione o ambiente `local`.
+  2. Rode `Auth/Register` (primeira vez) ou `Auth/Login`: o token vai para `accessToken`.
+  3. `Decks/Create` guarda `deckId`; `Flashcards/Create` guarda `flashcardId`; `Users/Get by email` guarda `userId`.
+
+  Todas as rotas fora de `Auth` herdam o Bearer token da collection.
+}

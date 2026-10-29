@@ -137,3 +137,7 @@ Os testes de integração ficam atrás da build tag `integration` e sobem um Pos
 ### Swagger
 
 Com a API rodando: **http://localhost:8081/swagger/index.html**
+
+### Bruno
+
+A pasta [`bruno/`](bruno) é uma collection do [Bruno](https://www.usebruno.com) com todas as rotas. Abra a pasta no Bruno, selecione o ambiente `local` e rode `Auth/Register` ou `Auth/Login`: o token e os ids (`deckId`, `flashcardId`, `userId`) são guardados automaticamente pelas requests de criação.

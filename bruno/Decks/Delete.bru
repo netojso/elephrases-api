@@ -1,0 +1,15 @@
+meta {
+  name: Delete
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/decks/{{deckId}}
+  body: none
+  auth: inherit
+}
+
+docs {
+  Apaga o deck e, por cascade, seus cartões e revisões.
+}
