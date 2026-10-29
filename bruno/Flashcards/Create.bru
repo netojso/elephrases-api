@@ -1,0 +1,26 @@
+meta {
+  name: Create
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/flashcards
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "deck_id": "{{deckId}}",
+    "front": "How are you?",
+    "back": "Como você está?",
+    "media": ""
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("flashcardId", res.body.id);
+  }
+}

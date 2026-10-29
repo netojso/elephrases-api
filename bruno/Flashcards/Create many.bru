@@ -1,0 +1,20 @@
+meta {
+  name: Create many
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/flashcards/create-many
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  flashcards: [{"deck_id":"{{deckId}}","front":"Good morning","back":"Bom dia"},{"deck_id":"{{deckId}}","front":"Thank you","back":"Obrigado"}]
+}
+
+docs {
+  Multipart: `flashcards` é um array JSON. Para anexar mídia, adicione campos `media` com arquivos
+  cujo nome bata com o `media` de cada cartão (o upload vai para o S3 configurado).
+}

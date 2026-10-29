@@ -1,0 +1,11 @@
+meta {
+  name: List by deck
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/flashcards/deck/{{deckId}}
+  body: none
+  auth: inherit
+}

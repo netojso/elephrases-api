@@ -1,0 +1,20 @@
+meta {
+  name: Update
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/decks/{{deckId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Inglês básico (editado)",
+    "description": "Frases do dia a dia",
+    "category": "english",
+    "visibility": "public"
+  }
+}

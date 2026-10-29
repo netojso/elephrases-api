@@ -1,0 +1,38 @@
+meta {
+  name: Create
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/decks
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Inglês básico",
+    "description": "Frases do dia a dia",
+    "category": "english",
+    "visibility": "private"
+  }
+}
+
+script:post-response {
+  // A API responde 201 com corpo null, então o id vem da listagem:
+  // o deck mais recente com o nome enviado.
+  if (res.body && res.body.id) {
+    bru.setVar("deckId", res.body.id);
+  } else if (res.status === 201) {
+    const axios = require("axios");
+    const list = await axios.get(`${bru.getEnvVar("baseUrl")}/decks`, {
+      headers: { Authorization: `Bearer ${bru.getVar("accessToken")}` }
+    });
+    const name = req.getBody().name;
+    const deck = list.data
+      .filter((d) => d.name === name)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    if (deck) bru.setVar("deckId", deck.id);
+  }
+}
