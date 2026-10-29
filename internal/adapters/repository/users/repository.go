@@ -20,7 +20,7 @@ func NewUserRepository(db *gorm.DB) portrepository.UserRepository {
 func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 	model := domainToModel(user)
 
-	err := r.DB.WithContext(ctx).Create(&model).Error
+	err := gormx.DB(ctx, r.DB).Create(&model).Error
 
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 
 func (r *UserRepository) Fetch(ctx context.Context) ([]*domain.User, error) {
 	var users []*User
-	err := r.DB.WithContext(ctx).Find(&users).Error
+	err := gormx.DB(ctx, r.DB).Find(&users).Error
 
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func (r *UserRepository) Fetch(ctx context.Context) ([]*domain.User, error) {
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var user User
 
-	err := r.DB.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	err := gormx.DB(ctx, r.DB).Where("email = ?", email).First(&user).Error
 
 	if err != nil {
 		return nil, gormx.MapError(err)
@@ -55,7 +55,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	var user User
-	err := r.DB.WithContext(ctx).Where("id = ?", id).First(&user).Error
+	err := gormx.DB(ctx, r.DB).Where("id = ?", id).First(&user).Error
 
 	if err != nil {
 		return nil, gormx.MapError(err)
@@ -66,11 +66,11 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 
 func (r *UserRepository) UpdateUser(ctx context.Context, id string, user *domain.User) error {
 	model := domainToModel(user)
-	err := r.DB.WithContext(ctx).Save(model).Error
+	err := gormx.DB(ctx, r.DB).Save(model).Error
 	return err
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, id string) error {
 	query := "DELETE FROM users WHERE id = ?"
-	return gormx.DeleteResult(r.DB.WithContext(ctx).Exec(query, id))
+	return gormx.DeleteResult(gormx.DB(ctx, r.DB).Exec(query, id))
 }

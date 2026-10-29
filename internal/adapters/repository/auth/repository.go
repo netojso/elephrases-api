@@ -20,7 +20,7 @@ func NewAuthRepository(db *gorm.DB) portrepository.AuthRepository {
 func (r *authRepository) CreateUser(ctx context.Context, user *domain.User) error {
 	model := domainToModel(user)
 
-	err := r.DB.WithContext(ctx).Create(&model).Error
+	err := gormx.DB(ctx, r.DB).Create(&model).Error
 	if err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func (r *authRepository) CreateUser(ctx context.Context, user *domain.User) erro
 
 func (r *authRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	user := User{}
-	err := r.DB.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	err := gormx.DB(ctx, r.DB).Where("email = ?", email).First(&user).Error
 
 	if err != nil {
 		return nil, gormx.MapError(err)

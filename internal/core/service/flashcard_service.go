@@ -12,11 +12,17 @@ import (
 )
 
 type flashcardService struct {
-	repo portrepository.FlashcardRepository
+	repo    portrepository.FlashcardRepository
+	reviews portrepository.ReviewRepository
+	tx      portrepository.TxManager
 }
 
-func NewFlashcardService(repo portrepository.FlashcardRepository) portservice.FlashcardService {
-	return &flashcardService{repo: repo}
+func NewFlashcardService(
+	repo portrepository.FlashcardRepository,
+	reviews portrepository.ReviewRepository,
+	tx portrepository.TxManager,
+) portservice.FlashcardService {
+	return &flashcardService{repo: repo, reviews: reviews, tx: tx}
 }
 
 func (fs *flashcardService) Study(ctx context.Context, deckID string) (*domain.Study, error) {
@@ -132,16 +138,26 @@ func (fs *flashcardService) Update(ctx context.Context, flashcard *domain.Flashc
 	return fs.repo.Update(ctx, flashcard)
 }
 
+// Review aplica a resposta ao cartão e registra a revisão na mesma transação.
+// O cartão é bloqueado (FOR UPDATE) para que revisões concorrentes não se sobrescrevam.
 func (fs *flashcardService) Review(ctx context.Context, id string, response string) error {
-	flashcard, err := fs.repo.FindByID(ctx, id)
+	return fs.tx.WithinTransaction(ctx, func(ctx context.Context) error {
+		flashcard, err := fs.repo.FindByIDForUpdate(ctx, id)
 
-	if err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
-	flashcard.ReviewFlashcard(response, nil)
+		previousState := flashcard.State
 
-	return fs.repo.Update(ctx, flashcard)
+		flashcard.ReviewFlashcard(response, nil)
+
+		if err := fs.repo.Update(ctx, flashcard); err != nil {
+			return err
+		}
+
+		return fs.reviews.Save(ctx, domain.NewReview(flashcard, response, previousState, flashcard.LastReviewAt.Time))
+	})
 }
 
 func (fs *flashcardService) Delete(ctx context.Context, id string) error {

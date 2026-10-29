@@ -20,7 +20,7 @@ func NewDeckRepository(db *gorm.DB) portrepository.DeckRepository {
 func (r *DeckRepository) FindAll(ctx context.Context) ([]*domain.Deck, error) {
 	decks := []*Deck{}
 
-	err := r.DB.WithContext(ctx).Preload("Flashcards").Find(&decks).Error
+	err := gormx.DB(ctx, r.DB).Preload("Flashcards").Find(&decks).Error
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (r *DeckRepository) FindAll(ctx context.Context) ([]*domain.Deck, error) {
 
 func (r *DeckRepository) FindByID(ctx context.Context, id string) (*domain.Deck, error) {
 	deck := Deck{}
-	err := r.DB.WithContext(ctx).Where("id = ?", id).Preload("Flashcards").First(&deck).Error
+	err := gormx.DB(ctx, r.DB).Where("id = ?", id).Preload("Flashcards").First(&deck).Error
 	if err != nil {
 		return nil, gormx.MapError(err)
 	}
@@ -39,7 +39,7 @@ func (r *DeckRepository) FindByID(ctx context.Context, id string) (*domain.Deck,
 
 func (r *DeckRepository) Save(ctx context.Context, deck *domain.Deck) error {
 	model := domainToModel(deck)
-	err := r.DB.WithContext(ctx).Create(model).Error
+	err := gormx.DB(ctx, r.DB).Create(model).Error
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (r *DeckRepository) Save(ctx context.Context, deck *domain.Deck) error {
 
 func (r *DeckRepository) Update(ctx context.Context, deck *domain.Deck) error {
 	model := domainToModel(deck)
-	err := r.DB.WithContext(ctx).Save(&model).Error
+	err := gormx.DB(ctx, r.DB).Save(&model).Error
 	if err != nil {
 		return err
 	}
@@ -56,5 +56,5 @@ func (r *DeckRepository) Update(ctx context.Context, deck *domain.Deck) error {
 }
 
 func (r *DeckRepository) Delete(ctx context.Context, id string) error {
-	return gormx.DeleteResult(r.DB.WithContext(ctx).Where("id = ?", id).Delete(&Deck{}))
+	return gormx.DeleteResult(gormx.DB(ctx, r.DB).Where("id = ?", id).Delete(&Deck{}))
 }
