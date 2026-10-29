@@ -1,12 +1,16 @@
 package portrepository
 
-import "github.com/netojso/elephrases-api/internal/core/domain"
+import (
+	"context"
+
+	"github.com/netojso/elephrases-api/internal/core/domain"
+)
 
 type UserRepository interface {
-	Create(user *domain.User) error
-	Fetch() ([]*domain.User, error)
-	GetByEmail(email string) (*domain.User, error)
-	GetByID(id string) (*domain.User, error)
-	UpdateUser(id string, user *domain.User) error
-	DeleteUser(id string) error
+	Create(ctx context.Context, user *domain.User) error
+	Fetch(ctx context.Context) ([]*domain.User, error)
+	GetByEmail(ctx context.Context, email string) (*domain.User, error)
+	GetByID(ctx context.Context, id string) (*domain.User, error)
+	UpdateUser(ctx context.Context, id string, user *domain.User) error
+	DeleteUser(ctx context.Context, id string) error
 }

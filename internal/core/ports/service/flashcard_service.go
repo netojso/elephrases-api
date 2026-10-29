@@ -1,15 +1,19 @@
 package portservice
 
-import "github.com/netojso/elephrases-api/internal/core/domain"
+import (
+	"context"
+
+	"github.com/netojso/elephrases-api/internal/core/domain"
+)
 
 type FlashcardService interface {
-	Study(deckID string) (*domain.Study, error)
-	GetDueFlashcards() ([]*domain.Flashcard, error)
-	GetAll() ([]*domain.Flashcard, error)
-	GetByID(id string) (*domain.Flashcard, error)
-	GetByDeckID(deckID string) ([]*domain.Flashcard, error)
-	Create(flashcard *domain.Flashcard) error
-	Update(flashcard *domain.Flashcard) error
-	Review(id string, response string) error
-	Delete(id string) error
+	Study(ctx context.Context, deckID string) (*domain.Study, error)
+	GetDueFlashcards(ctx context.Context) ([]*domain.Flashcard, error)
+	GetAll(ctx context.Context) ([]*domain.Flashcard, error)
+	GetByID(ctx context.Context, id string) (*domain.Flashcard, error)
+	GetByDeckID(ctx context.Context, deckID string) ([]*domain.Flashcard, error)
+	Create(ctx context.Context, flashcard *domain.Flashcard) error
+	Update(ctx context.Context, flashcard *domain.Flashcard) error
+	Review(ctx context.Context, id string, response string) error
+	Delete(ctx context.Context, id string) error
 }

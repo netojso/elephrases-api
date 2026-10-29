@@ -1,6 +1,10 @@
 package portrepository
 
-import "github.com/netojso/elephrases-api/internal/core/domain"
+import (
+	"context"
+
+	"github.com/netojso/elephrases-api/internal/core/domain"
+)
 
 type Options struct {
 	Where map[string]interface{}
@@ -8,10 +12,10 @@ type Options struct {
 }
 
 type FlashcardRepository interface {
-	FindByDeckID(deckID string) ([]*domain.Flashcard, error)
-	FindAll(options *Options) ([]*domain.Flashcard, error)
-	FindByID(id string) (*domain.Flashcard, error)
-	Save(flashcard *domain.Flashcard) error
-	Update(flashcard *domain.Flashcard) error
-	Delete(id string) error
+	FindByDeckID(ctx context.Context, deckID string) ([]*domain.Flashcard, error)
+	FindAll(ctx context.Context, options *Options) ([]*domain.Flashcard, error)
+	FindByID(ctx context.Context, id string) (*domain.Flashcard, error)
+	Save(ctx context.Context, flashcard *domain.Flashcard) error
+	Update(ctx context.Context, flashcard *domain.Flashcard) error
+	Delete(ctx context.Context, id string) error
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/netojso/elephrases-api/config"
@@ -19,8 +20,12 @@ func NewAuthService(repo portrepository.AuthRepository, env *config.Env) portser
 	return &authService{repo: repo, env: env}
 }
 
-func (s *authService) Login(email string, password string) (*domain.Session, error) {
-	user, err := s.repo.GetUserByEmail(email)
+func (s *authService) Login(ctx context.Context, email string, password string) (*domain.Session, error) {
+	user, err := s.repo.GetUserByEmail(ctx, email)
+
+	if errors.Is(err, pkg.ErrNotFound) {
+		return nil, errors.New("invalid credentials")
+	}
 
 	if err != nil {
 		return nil, err
@@ -50,12 +55,16 @@ func (s *authService) Login(email string, password string) (*domain.Session, err
 	}, nil
 }
 
-func (s *authService) Register(email string, password string) (*domain.Session, error) {
+func (s *authService) Register(ctx context.Context, email string, password string) (*domain.Session, error) {
 
-	_, err := s.repo.GetUserByEmail(email)
+	_, err := s.repo.GetUserByEmail(ctx, email)
 
 	if err == nil {
 		return nil, errors.New("user already exists")
+	}
+
+	if !errors.Is(err, pkg.ErrNotFound) {
+		return nil, err
 	}
 
 	user := domain.NewUser(email, password)
@@ -68,7 +77,7 @@ func (s *authService) Register(email string, password string) (*domain.Session, 
 
 	user.Password = hash_password
 
-	err = s.repo.CreateUser(user)
+	err = s.repo.CreateUser(ctx, user)
 
 	if err != nil {
 		return nil, err

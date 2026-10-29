@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/netojso/elephrases-api/internal/core/domain"
@@ -18,7 +19,7 @@ func NewFlashcardService(repo portrepository.FlashcardRepository) portservice.Fl
 	return &flashcardService{repo: repo}
 }
 
-func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
+func (fs *flashcardService) Study(ctx context.Context, deckID string) (*domain.Study, error) {
 	dailyLimit := 20
 
 	yesterday := time.Date(
@@ -33,6 +34,7 @@ func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
 	)
 
 	review_today_flashcards, err := fs.repo.FindAll(
+		ctx,
 		&portrepository.Options{
 			Where: map[string]interface{}{
 				"deck_id = ?":        deckID,
@@ -45,6 +47,7 @@ func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
 	}
 
 	new_flashcards, err := fs.repo.FindAll(
+		ctx,
 		&portrepository.Options{
 			Where: map[string]interface{}{
 				"deck_id = ?":            deckID,
@@ -59,6 +62,7 @@ func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
 	}
 
 	due_flashcards, err := fs.repo.FindAll(
+		ctx,
 		&portrepository.Options{
 			Where: map[string]interface{}{
 				"deck_id = ?":         deckID,
@@ -85,8 +89,9 @@ func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
 	}, nil
 }
 
-func (fs *flashcardService) GetDueFlashcards() ([]*domain.Flashcard, error) {
+func (fs *flashcardService) GetDueFlashcards(ctx context.Context) ([]*domain.Flashcard, error) {
 	return fs.repo.FindAll(
+		ctx,
 		&portrepository.Options{
 			Where: map[string]interface{}{
 				"next_review_at <= ?": time.Now(),
@@ -95,19 +100,19 @@ func (fs *flashcardService) GetDueFlashcards() ([]*domain.Flashcard, error) {
 	)
 }
 
-func (fs *flashcardService) GetAll() ([]*domain.Flashcard, error) {
-	return fs.repo.FindAll(nil)
+func (fs *flashcardService) GetAll(ctx context.Context) ([]*domain.Flashcard, error) {
+	return fs.repo.FindAll(ctx, nil)
 }
 
-func (fs *flashcardService) GetByID(id string) (*domain.Flashcard, error) {
-	return fs.repo.FindByID(id)
+func (fs *flashcardService) GetByID(ctx context.Context, id string) (*domain.Flashcard, error) {
+	return fs.repo.FindByID(ctx, id)
 }
 
-func (fs *flashcardService) GetByDeckID(deckID string) ([]*domain.Flashcard, error) {
-	return fs.repo.FindByDeckID(deckID)
+func (fs *flashcardService) GetByDeckID(ctx context.Context, deckID string) ([]*domain.Flashcard, error) {
+	return fs.repo.FindByDeckID(ctx, deckID)
 }
 
-func (fs *flashcardService) Create(flashcard *domain.Flashcard) error {
+func (fs *flashcardService) Create(ctx context.Context, flashcard *domain.Flashcard) error {
 	// add s3 domain to media flashcard
 
 	s3Url := viper.GetString("AWS_S3_URL")
@@ -120,15 +125,15 @@ func (fs *flashcardService) Create(flashcard *domain.Flashcard) error {
 
 	flashcard.MediaUrl = mediaUrl
 
-	return fs.repo.Save(flashcard)
+	return fs.repo.Save(ctx, flashcard)
 }
 
-func (fs *flashcardService) Update(flashcard *domain.Flashcard) error {
-	return fs.repo.Update(flashcard)
+func (fs *flashcardService) Update(ctx context.Context, flashcard *domain.Flashcard) error {
+	return fs.repo.Update(ctx, flashcard)
 }
 
-func (fs *flashcardService) Review(id string, response string) error {
-	flashcard, err := fs.repo.FindByID(id)
+func (fs *flashcardService) Review(ctx context.Context, id string, response string) error {
+	flashcard, err := fs.repo.FindByID(ctx, id)
 
 	if err != nil {
 		return err
@@ -136,9 +141,9 @@ func (fs *flashcardService) Review(id string, response string) error {
 
 	flashcard.ReviewFlashcard(response, nil)
 
-	return fs.repo.Update(flashcard)
+	return fs.repo.Update(ctx, flashcard)
 }
 
-func (fs *flashcardService) Delete(id string) error {
-	return fs.repo.Delete(id)
+func (fs *flashcardService) Delete(ctx context.Context, id string) error {
+	return fs.repo.Delete(ctx, id)
 }

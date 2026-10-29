@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/netojso/elephrases-api/internal/adapters/http/dto"
@@ -10,11 +12,12 @@ import (
 )
 
 type UserHandler struct {
+	timeout time.Duration
 	service portservice.UserService
 }
 
-func NewUserHandler(service portservice.UserService) *UserHandler {
-	return &UserHandler{service: service}
+func NewUserHandler(service portservice.UserService, timeout time.Duration) *UserHandler {
+	return &UserHandler{service: service, timeout: timeout}
 }
 
 // Fetch godoc
@@ -28,7 +31,10 @@ func NewUserHandler(service portservice.UserService) *UserHandler {
 // @Failure 500 {object} pkg.ErrorResponse
 // @Router /users [get]
 func (uc *UserHandler) Fetch(ctx *gin.Context) {
-	users, err := uc.service.Fetch()
+	reqCtx, cancel := requestContext(ctx, uc.timeout)
+	defer cancel()
+
+	users, err := uc.service.Fetch(reqCtx)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, pkg.ErrorResponse{Message: err.Error()})
@@ -50,12 +56,15 @@ func (uc *UserHandler) Fetch(ctx *gin.Context) {
 // @Failure 404 {object} pkg.ErrorResponse
 // @Router /users/email/{email} [get]
 func (uc *UserHandler) GetByEmail(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, uc.timeout)
+	defer cancel()
+
 	email := ctx.Param("email")
 
-	user, err := uc.service.GetByEmail(email)
+	user, err := uc.service.GetByEmail(reqCtx, email)
 
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, pkg.ErrorResponse{Message: "User not found with the given email"})
+		ctx.JSON(errorStatus(err), pkg.ErrorResponse{Message: userErrorMessage(err, "User not found with the given email")})
 		return
 	}
 
@@ -74,12 +83,15 @@ func (uc *UserHandler) GetByEmail(ctx *gin.Context) {
 // @Failure 404 {object} pkg.ErrorResponse
 // @Router /users/{id} [get]
 func (uc *UserHandler) GetUserByID(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, uc.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
 
-	user, err := uc.service.GetByID(id)
+	user, err := uc.service.GetByID(reqCtx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, pkg.ErrorResponse{Message: "User not found with the given id"})
+		ctx.JSON(errorStatus(err), pkg.ErrorResponse{Message: userErrorMessage(err, "User not found with the given id")})
 		return
 	}
 
@@ -101,12 +113,15 @@ func (uc *UserHandler) GetUserByID(ctx *gin.Context) {
 // @Failure 500 {object} pkg.ErrorResponse
 // @Router /users/{id} [put]
 func (uc *UserHandler) UpdateUser(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, uc.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
 
-	user, err := uc.service.GetByID(id)
+	user, err := uc.service.GetByID(reqCtx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, pkg.ErrorResponse{Message: "User not found with the given id"})
+		ctx.JSON(errorStatus(err), pkg.ErrorResponse{Message: userErrorMessage(err, "User not found with the given id")})
 		return
 	}
 
@@ -120,8 +135,8 @@ func (uc *UserHandler) UpdateUser(ctx *gin.Context) {
 	user.FullName = body.FullName
 	user.PhoneNumber = body.PhoneNumber
 
-	if err := uc.service.UpdateUser(id, user); err != nil {
-		ctx.JSON(http.StatusInternalServerError, pkg.ErrorResponse{Message: err.Error()})
+	if err := uc.service.UpdateUser(reqCtx, id, user); err != nil {
+		ctx.JSON(errorStatus(err), pkg.ErrorResponse{Message: err.Error()})
 		return
 	}
 
@@ -140,15 +155,30 @@ func (uc *UserHandler) UpdateUser(ctx *gin.Context) {
 // @Failure 404 {object} pkg.ErrorResponse
 // @Router /users/{id} [delete]
 func (uc *UserHandler) DeleteUser(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, uc.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
 
-	_, err := uc.service.GetByID(id)
+	_, err := uc.service.GetByID(reqCtx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, pkg.ErrorResponse{Message: "User not found with the given id"})
+		ctx.JSON(errorStatus(err), pkg.ErrorResponse{Message: userErrorMessage(err, "User not found with the given id")})
 		return
 	}
 
-	uc.service.DeleteUser(id)
+	if err := uc.service.DeleteUser(reqCtx, id); err != nil {
+		ctx.JSON(errorStatus(err), pkg.ErrorResponse{Message: err.Error()})
+		return
+	}
+
 	ctx.Status(http.StatusNoContent)
+}
+
+// userErrorMessage mantém a mensagem amigável para 404 e expõe o erro nos demais casos.
+func userErrorMessage(err error, notFound string) string {
+	if errors.Is(err, pkg.ErrNotFound) {
+		return notFound
+	}
+	return err.Error()
 }
