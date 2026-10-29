@@ -129,3 +129,64 @@ Antes da 000007, as três consultas faziam **Seq Scan na tabela inteira** (50 mi
  Execution Time: 0.100 ms
 (11 rows)
 ```
+
+## Fase 5 — fila em uma única query (CTE)
+
+`FindStudyQueue` substitui as três consultas acima por uma única query com CTEs (`reviewed_today`, `new_cards` e `due_cards`). Mesmo dataset e mesmo deck, schema v8, limite diário de 20.
+
+| | 3 consultas (v7) | 1 query com CTE |
+|---|---|---|
+| Idas ao banco | 3 | 1 |
+| Tempo de execução no servidor (soma) | 0.226 ms | 0.451 ms |
+| Buffers | 58 | 113 |
+| Índices usados | os dois | os dois (inclusive *Index Only Scan* na contagem) |
+
+No servidor, a query única é um pouco mais cara, e o motivo é intencional: os cartões novos agora saem **ordenados por `created_at`** (ordem determinística). Para escolher os 20 mais antigos, o Postgres lê os 66 novos do deck. Antes, o `LIMIT 20` sem `ORDER BY` parava nos primeiros 20 que encontrasse, em ordem arbitrária. O ganho real está em outros dois pontos:
+
+- **Uma ida ao banco em vez de três.** Com o banco em outra máquina, cada ida custa da ordem de 0,5 a 2 ms de rede, valor bem maior que o tempo de execução no servidor.
+- **Snapshot consistente.** A contagem de revisados hoje e as listas de novos e vencidos vêm do mesmo instante. Com três consultas separadas, uma revisão concorrente podia cair entre elas.
+
+A query também corrige um bug: com 20 ou mais revisões no dia, `dailyLimit - revisadosHoje` ficava `<= 0`, o repositório ignorava o `LIMIT` e devolvia **todos** os cartões novos. Agora o limite é `GREATEST(limite - revisados, 0)`.
+
+```
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=320.77..320.87 rows=40 width=615) (actual time=0.374..0.375 rows=46 loops=1)
+   Sort Key: (0), f.next_review_at, f.created_at, f.id
+   Sort Method: quicksort  Memory: 31kB
+   Buffers: shared hit=113
+   ->  Append  (cost=198.27..319.71 rows=40 width=615) (actual time=0.266..0.352 rows=46 loops=1)
+         Buffers: shared hit=104
+         ->  Limit  (cost=198.27..198.28 rows=6 width=615) (actual time=0.266..0.267 rows=20 loops=1)
+               Buffers: shared hit=75
+               InitPlan 1 (returns $0)
+                 ->  Aggregate  (cost=4.44..4.45 rows=1 width=8) (actual time=0.020..0.020 rows=1 loops=1)
+                       Buffers: shared hit=6
+                       ->  Index Only Scan using idx_flashcards_deck_last_review on flashcards  (cost=0.42..4.44 rows=1 width=0) (actual time=0.019..0.019 rows=0 loops=1)
+                             Index Cond: ((deck_id = '4df442a9-0417-48f8-b166-4f8182612bb4'::uuid) AND (last_review_at >= date_trunc('day'::text, now())))
+                             Heap Fetches: 0
+                             Buffers: shared hit=6
+               ->  Sort  (cost=193.80..193.95 rows=60 width=615) (actual time=0.244..0.244 rows=20 loops=1)
+                     Sort Key: f.created_at, f.id
+                     Sort Method: top-N heapsort  Memory: 29kB
+                     Buffers: shared hit=69
+                     ->  Bitmap Heap Scan on flashcards f  (cost=5.03..192.03 rows=60 width=615) (actual time=0.017..0.226 rows=66 loops=1)
+                           Recheck Cond: ((deck_id = '4df442a9-0417-48f8-b166-4f8182612bb4'::uuid) AND (last_review_at IS NULL))
+                           Heap Blocks: exact=66
+                           Buffers: shared hit=69
+                           ->  Bitmap Index Scan on idx_flashcards_deck_last_review  (cost=0.00..5.01 rows=60 width=0) (actual time=0.008..0.008 rows=66 loops=1)
+                                 Index Cond: ((deck_id = '4df442a9-0417-48f8-b166-4f8182612bb4'::uuid) AND (last_review_at IS NULL))
+                                 Buffers: shared hit=3
+         ->  Bitmap Heap Scan on flashcards f_1  (cost=4.77..120.83 rows=34 width=615) (actual time=0.011..0.083 rows=26 loops=1)
+               Recheck Cond: ((deck_id = '4df442a9-0417-48f8-b166-4f8182612bb4'::uuid) AND (next_review_at <= now()))
+               Heap Blocks: exact=26
+               Buffers: shared hit=29
+               ->  Bitmap Index Scan on idx_flashcards_deck_next_review  (cost=0.00..4.76 rows=34 width=0) (actual time=0.008..0.008 rows=26 loops=1)
+                     Index Cond: ((deck_id = '4df442a9-0417-48f8-b166-4f8182612bb4'::uuid) AND (next_review_at <= now()))
+                     Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=161
+ Planning Time: 0.323 ms
+ Execution Time: 0.451 ms
+(37 rows)
+```

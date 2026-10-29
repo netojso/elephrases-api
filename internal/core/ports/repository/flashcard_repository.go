@@ -2,6 +2,7 @@ package portrepository
 
 import (
 	"context"
+	"time"
 
 	"github.com/netojso/elephrases-api/internal/core/domain"
 )
@@ -13,6 +14,9 @@ type Options struct {
 
 type FlashcardRepository interface {
 	FindByDeckID(ctx context.Context, deckID string) ([]*domain.Flashcard, error)
+	// FindStudyQueue monta a fila de estudo do deck: cartões novos até o
+	// limite restante do dia e cartões vencidos em now, por next_review_at.
+	FindStudyQueue(ctx context.Context, deckID string, dailyLimit int, now time.Time) (*domain.Study, error)
 	FindAll(ctx context.Context, options *Options) ([]*domain.Flashcard, error)
 	FindByID(ctx context.Context, id string) (*domain.Flashcard, error)
 	// FindByIDForUpdate bloqueia a linha (SELECT ... FOR UPDATE) até o fim da transação.

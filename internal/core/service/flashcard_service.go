@@ -25,74 +25,11 @@ func NewFlashcardService(
 	return &flashcardService{repo: repo, reviews: reviews, tx: tx}
 }
 
+// dailyNewCardLimit é o máximo de cartões estudados por deck por dia.
+const dailyNewCardLimit = 20
+
 func (fs *flashcardService) Study(ctx context.Context, deckID string) (*domain.Study, error) {
-	dailyLimit := 20
-
-	yesterday := time.Date(
-		time.Now().Year(),
-		time.Now().Month(),
-		time.Now().Day(),
-		0,
-		0,
-		0,
-		0,
-		time.Now().Location(),
-	)
-
-	review_today_flashcards, err := fs.repo.FindAll(
-		ctx,
-		&portrepository.Options{
-			Where: map[string]interface{}{
-				"deck_id = ?":        deckID,
-				"last_review_at > ?": yesterday,
-			},
-		})
-
-	if err != nil {
-		return nil, err
-	}
-
-	new_flashcards, err := fs.repo.FindAll(
-		ctx,
-		&portrepository.Options{
-			Where: map[string]interface{}{
-				"deck_id = ?":            deckID,
-				"last_review_at IS NULL": nil,
-			},
-			Limit: dailyLimit - len(review_today_flashcards),
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	due_flashcards, err := fs.repo.FindAll(
-		ctx,
-		&portrepository.Options{
-			Where: map[string]interface{}{
-				"deck_id = ?":         deckID,
-				"next_review_at <= ?": time.Now(),
-			},
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if new_flashcards == nil {
-		new_flashcards = []*domain.Flashcard{}
-	}
-
-	if due_flashcards == nil {
-		due_flashcards = []*domain.Flashcard{}
-	}
-
-	return &domain.Study{
-		NewCards: new_flashcards,
-		DueCards: due_flashcards,
-	}, nil
+	return fs.repo.FindStudyQueue(ctx, deckID, dailyNewCardLimit, time.Now())
 }
 
 func (fs *flashcardService) GetDueFlashcards(ctx context.Context) ([]*domain.Flashcard, error) {
