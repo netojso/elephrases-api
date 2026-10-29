@@ -25,7 +25,7 @@ type Flashcard struct {
 	NextReviewAt sql.NullTime   `gorm:"type:timestamp"`
 	State        string         `gorm:"type:varchar(20)"`
 	EaseFactor   float64        `gorm:"type:float"`
-	Interval     time.Duration  `gorm:"type:interval"`
+	Interval     time.Duration  `gorm:"type:bigint"`
 	DeckID       uuid.UUID      `gorm:"foreignKey:DeckID;references:ID"`
 }
 

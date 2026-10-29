@@ -47,8 +47,8 @@ func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
 	new_flashcards, err := fs.repo.FindAll(
 		&portrepository.Options{
 			Where: map[string]interface{}{
-				"deck_id":        deckID,
-				"last_review_at": nil,
+				"deck_id = ?":            deckID,
+				"last_review_at IS NULL": nil,
 			},
 			Limit: dailyLimit - len(review_today_flashcards),
 		},
@@ -61,7 +61,7 @@ func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
 	due_flashcards, err := fs.repo.FindAll(
 		&portrepository.Options{
 			Where: map[string]interface{}{
-				"deck_id":             deckID,
+				"deck_id = ?":         deckID,
 				"next_review_at <= ?": time.Now(),
 			},
 		},

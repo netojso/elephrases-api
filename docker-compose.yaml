@@ -4,7 +4,8 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - db
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - .env
     restart: always
@@ -20,14 +21,20 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
 
   migrate:
     image: migrate/migrate
     volumes:
       - ./database/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://postgres:oserafim@db:5432/elephrases?sslmode=disable", "up"]
+    command: ["-path", "/migrations", "-database", "postgres://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}?sslmode=disable", "up"]
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   db_data:

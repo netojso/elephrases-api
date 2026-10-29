@@ -21,6 +21,10 @@ func (r *flashcardRepository) FindAll(options *portrepository.Options) ([]*domai
 
 	if options != nil {
 		for key, value := range options.Where {
+			if value == nil {
+				db = db.Where(key)
+				continue
+			}
 			db = db.Where(key, value)
 		}
 
