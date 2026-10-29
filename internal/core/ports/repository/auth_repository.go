@@ -1,8 +1,12 @@
 package portrepository
 
-import "github.com/netojso/elephrases-api/internal/core/domain"
+import (
+	"context"
+
+	"github.com/netojso/elephrases-api/internal/core/domain"
+)
 
 type AuthRepository interface {
-	CreateUser(user *domain.User) error
-	GetUserByEmail(email string) (*domain.User, error)
+	CreateUser(ctx context.Context, user *domain.User) error
+	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 }

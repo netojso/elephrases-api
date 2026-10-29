@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/netojso/elephrases-api/internal/core/domain"
 	portrepository "github.com/netojso/elephrases-api/internal/core/ports/repository"
 	portservice "github.com/netojso/elephrases-api/internal/core/ports/service"
@@ -14,40 +16,40 @@ func NewUserService(repo portrepository.UserRepository) portservice.UserService 
 	return &UserService{repo: repo}
 }
 
-func (uu *UserService) Create(user *domain.User) error {
-	return uu.repo.Create(user)
+func (uu *UserService) Create(ctx context.Context, user *domain.User) error {
+	return uu.repo.Create(ctx, user)
 }
 
-func (uu *UserService) GetByID(id string) (*domain.User, error) {
-	return uu.repo.GetByID(id)
+func (uu *UserService) GetByID(ctx context.Context, id string) (*domain.User, error) {
+	return uu.repo.GetByID(ctx, id)
 }
 
-func (uu *UserService) GetByEmail(email string) (*domain.User, error) {
-	return uu.repo.GetByEmail(email)
+func (uu *UserService) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	return uu.repo.GetByEmail(ctx, email)
 }
 
-func (uu *UserService) Fetch() ([]*domain.User, error) {
-	return uu.repo.Fetch()
+func (uu *UserService) Fetch(ctx context.Context) ([]*domain.User, error) {
+	return uu.repo.Fetch(ctx)
 }
 
-func (uu *UserService) UpdateUser(id string, user *domain.User) error {
+func (uu *UserService) UpdateUser(ctx context.Context, id string, user *domain.User) error {
 
-	_, err := uu.repo.GetByID(id)
+	_, err := uu.repo.GetByID(ctx, id)
 
 	if err != nil {
 		return err
 	}
 
-	return uu.repo.UpdateUser(id, user)
+	return uu.repo.UpdateUser(ctx, id, user)
 }
 
-func (uu *UserService) DeleteUser(id string) error {
+func (uu *UserService) DeleteUser(ctx context.Context, id string) error {
 
-	_, err := uu.repo.GetByID(id)
+	_, err := uu.repo.GetByID(ctx, id)
 
 	if err != nil {
 		return err
 	}
 
-	return uu.repo.DeleteUser(id)
+	return uu.repo.DeleteUser(ctx, id)
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/netojso/elephrases-api/internal/adapters/http/dto"
@@ -10,12 +11,14 @@ import (
 )
 
 type DeckHandler struct {
+	timeout     time.Duration
 	deckService portservice.DeckService
 }
 
-func NewDeckHandler(deckService portservice.DeckService) *DeckHandler {
+func NewDeckHandler(deckService portservice.DeckService, timeout time.Duration) *DeckHandler {
 	return &DeckHandler{
 		deckService: deckService,
+		timeout:     timeout,
 	}
 }
 
@@ -29,9 +32,12 @@ func NewDeckHandler(deckService portservice.DeckService) *DeckHandler {
 // @Failure 404 {object} object{error=string}
 // @Router /decks [get]
 func (dh *DeckHandler) GetAll(ctx *gin.Context) {
-	decks, err := dh.deckService.GetAll()
+	reqCtx, cancel := requestContext(ctx, dh.timeout)
+	defer cancel()
+
+	decks, err := dh.deckService.GetAll(reqCtx)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, decks)
@@ -49,10 +55,13 @@ func (dh *DeckHandler) GetAll(ctx *gin.Context) {
 // @Failure 404 {object} object{error=string}
 // @Router /decks/{id} [get]
 func (dh *DeckHandler) GetByID(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, dh.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
-	deck, err := dh.deckService.GetByID(id)
+	deck, err := dh.deckService.GetByID(reqCtx, id)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, deck)
@@ -72,6 +81,9 @@ func (dh *DeckHandler) GetByID(ctx *gin.Context) {
 // @Failure 500 {object} object{error=string}
 // @Router /decks [post]
 func (dh *DeckHandler) Create(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, dh.timeout)
+	defer cancel()
+
 	var body *dto.CreateDeckDTO
 
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -81,8 +93,8 @@ func (dh *DeckHandler) Create(ctx *gin.Context) {
 
 	deck := domain.NewDeck(body.Name, body.Description, body.Category, body.Visibility)
 
-	if err := dh.deckService.Create(deck); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := dh.deckService.Create(reqCtx, deck); err != nil {
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -104,12 +116,15 @@ func (dh *DeckHandler) Create(ctx *gin.Context) {
 // @Failure 500 {object} object{error=string}
 // @Router /decks/{id} [put]
 func (dh *DeckHandler) Update(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, dh.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
 
-	deck, err := dh.deckService.GetByID(id)
+	deck, err := dh.deckService.GetByID(reqCtx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -118,8 +133,8 @@ func (dh *DeckHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	if err := dh.deckService.Update(deck); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := dh.deckService.Update(reqCtx, deck); err != nil {
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -138,10 +153,13 @@ func (dh *DeckHandler) Update(ctx *gin.Context) {
 // @Failure 500 {object} object{error=string}
 // @Router /decks/{id} [delete]
 func (dh *DeckHandler) Delete(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, dh.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
 
-	if err := dh.deckService.Delete(id); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := dh.deckService.Delete(reqCtx, id); err != nil {
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 

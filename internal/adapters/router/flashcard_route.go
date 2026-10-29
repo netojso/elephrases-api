@@ -5,6 +5,8 @@ import (
 	"github.com/netojso/elephrases-api/config"
 	"github.com/netojso/elephrases-api/internal/adapters/http/handler"
 	repository "github.com/netojso/elephrases-api/internal/adapters/repository/flashcards"
+	"github.com/netojso/elephrases-api/internal/adapters/repository/gormx"
+	reviewrepository "github.com/netojso/elephrases-api/internal/adapters/repository/reviews"
 	"github.com/netojso/elephrases-api/internal/adapters/storage"
 	"github.com/netojso/elephrases-api/internal/core/service"
 	"gorm.io/gorm"
@@ -12,9 +14,9 @@ import (
 
 func NewFlashcardRouter(env *config.Env, db *gorm.DB, group *gin.RouterGroup) {
 	repo := repository.NewFlashcardRepository(db)
-	service := service.NewFlashcardService(repo)
+	service := service.NewFlashcardService(repo, reviewrepository.NewReviewRepository(db), gormx.NewTxManager(db))
 	storage, _ := storage.NewS3Adapter(env)
-	handler := handler.NewFlashcardHandler(service, storage)
+	handler := handler.NewFlashcardHandler(service, storage, timeout(env))
 
 	group.GET("/flashcards/deck/:deckID/study", handler.Study)
 

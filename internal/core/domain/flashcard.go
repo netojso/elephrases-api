@@ -15,6 +15,9 @@ const (
 	StateReview   CardState = "review"
 )
 
+// DefaultEaseFactor é o fator de facilidade inicial de um cartão (SM-2).
+const DefaultEaseFactor = 2.5
+
 type Flashcard struct {
 	ID           pkg.UUID                `json:"id"`
 	DeckID       pkg.UUID                `json:"deck_id"`
@@ -42,19 +45,20 @@ type Study struct {
 
 func NewFlashcard(deckID pkg.UUID, front string, back string, media string) *Flashcard {
 	return &Flashcard{
-		ID:        pkg.NewUUID(),
-		DeckID:    deckID,
-		Front:     front,
-		Back:      back,
-		CreatedAt: time.Now(),
-		State:     StateNew,
-		MediaUrl:  nullable.NewNullableString(media),
+		ID:         pkg.NewUUID(),
+		DeckID:     deckID,
+		Front:      front,
+		Back:       back,
+		CreatedAt:  time.Now(),
+		State:      StateNew,
+		EaseFactor: DefaultEaseFactor,
+		MediaUrl:   nullable.NewNullableString(media),
 	}
 }
 
-func (f *Flashcard) ReviewFlashcard(response string, settings *Settings) {
+// ReviewFlashcard aplica a resposta do usuário ao cartão no instante now.
+func (f *Flashcard) ReviewFlashcard(response string, settings *Settings, now time.Time) {
 	// Set last review time
-	now := time.Now()
 	f.LastReviewAt = nullable.NewNullableTime(now)
 
 	// Default settings if nil

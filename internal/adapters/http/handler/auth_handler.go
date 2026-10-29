@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/netojso/elephrases-api/internal/adapters/http/dto"
@@ -10,12 +11,13 @@ import (
 
 // AuthHandler handles authentication related requests
 type AuthHandler struct {
+	timeout time.Duration
 	service portservice.AuthService
 }
 
 // NewAuthHandler creates a new AuthHandler
-func NewAuthHandler(service portservice.AuthService) *AuthHandler {
-	return &AuthHandler{service: service}
+func NewAuthHandler(service portservice.AuthService, timeout time.Duration) *AuthHandler {
+	return &AuthHandler{service: service, timeout: timeout}
 }
 
 // @Summary Login a user
@@ -27,6 +29,9 @@ func NewAuthHandler(service portservice.AuthService) *AuthHandler {
 // @Success 200 {object} dto.AuthResponseDTO
 // @Router /login [post]
 func (ah AuthHandler) Login(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, ah.timeout)
+	defer cancel()
+
 	var body dto.LoginDTO
 
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -34,7 +39,7 @@ func (ah AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	session, err := ah.service.Login(body.Email, body.Password)
+	session, err := ah.service.Login(reqCtx, body.Email, body.Password)
 
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": err.Error()})
@@ -55,6 +60,9 @@ func (ah AuthHandler) Login(ctx *gin.Context) {
 // @Success 200 {object} dto.AuthResponseDTO
 // @Router /register [post]
 func (ah AuthHandler) Register(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, ah.timeout)
+	defer cancel()
+
 	var body dto.RegisterDTO
 
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -62,7 +70,7 @@ func (ah AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	session, err := ah.service.Register(body.Email, body.Password)
+	session, err := ah.service.Register(reqCtx, body.Email, body.Password)
 
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": err.Error()})

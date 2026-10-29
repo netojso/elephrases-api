@@ -12,7 +12,7 @@ import (
 func NewAuthRouter(env *config.Env, db *gorm.DB, group *gin.RouterGroup) {
 	repo := repository.NewAuthRepository(db)
 	auth_service := service.NewAuthService(repo, env)
-	auth_handler := handler.NewAuthHandler(auth_service)
+	auth_handler := handler.NewAuthHandler(auth_service, timeout(env))
 
 	group.POST("/login", auth_handler.Login)
 	group.POST("/register", auth_handler.Register)

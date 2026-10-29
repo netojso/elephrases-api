@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/netojso/elephrases-api/internal/adapters/http/dto"
@@ -14,6 +15,7 @@ import (
 )
 
 type FlashcardHandler struct {
+	timeout time.Duration
 	service portservice.FlashcardService
 	storage portrepository.StoragePort
 }
@@ -21,8 +23,10 @@ type FlashcardHandler struct {
 func NewFlashcardHandler(
 	service portservice.FlashcardService,
 	storage portrepository.StoragePort,
+	timeout time.Duration,
 ) *FlashcardHandler {
 	return &FlashcardHandler{
+		timeout: timeout,
 		service: service,
 		storage: storage,
 	}
@@ -38,10 +42,13 @@ func NewFlashcardHandler(
 // @Failure 500 {object} object{error=string}
 // @Router /flashcards/due [get]
 func (fh FlashcardHandler) GetDueFlashcards(ctx *gin.Context) {
-	flashcards, err := fh.service.GetDueFlashcards()
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
+	flashcards, err := fh.service.GetDueFlashcards(reqCtx)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -49,12 +56,15 @@ func (fh FlashcardHandler) GetDueFlashcards(ctx *gin.Context) {
 }
 
 func (fh FlashcardHandler) Study(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
 	deckID := ctx.Param("deckID")
 
-	data, err := fh.service.Study(deckID)
+	data, err := fh.service.Study(reqCtx, deckID)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -74,6 +84,9 @@ func (fh FlashcardHandler) Study(ctx *gin.Context) {
 // @Failure 500 {object} object{error=string}
 // @Router /flashcards/review [post]
 func (fh FlashcardHandler) Review(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
 	var body dto.ReviewFlashcardDTO
 
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -81,8 +94,8 @@ func (fh FlashcardHandler) Review(ctx *gin.Context) {
 		return
 	}
 
-	if err := fh.service.Review(body.FlashCardID, body.Response); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := fh.service.Review(reqCtx, body.FlashCardID, body.Response); err != nil {
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -99,10 +112,13 @@ func (fh FlashcardHandler) Review(ctx *gin.Context) {
 // @Failure 500 {object} object{error=string}
 // @Router /flashcards [get]
 func (fh FlashcardHandler) GetAll(ctx *gin.Context) {
-	flashcards, err := fh.service.GetAll()
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
+	flashcards, err := fh.service.GetAll(reqCtx)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -120,12 +136,15 @@ func (fh FlashcardHandler) GetAll(ctx *gin.Context) {
 // @Failure 404 {object} object{error=string}
 // @Router /flashcards/{id} [get]
 func (fh FlashcardHandler) GetByID(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
 
-	flashcard, err := fh.service.GetByID(id)
+	flashcard, err := fh.service.GetByID(reqCtx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -143,12 +162,15 @@ func (fh FlashcardHandler) GetByID(ctx *gin.Context) {
 // @Failure 404 {object} object{error=string}
 // @Router /flashcards/deck/{deckID} [get]
 func (fh FlashcardHandler) GetByDeckID(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
 	deckID := ctx.Param("deckID")
 
-	flashcards, err := fh.service.GetByDeckID(deckID)
+	flashcards, err := fh.service.GetByDeckID(reqCtx, deckID)
 
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -168,6 +190,9 @@ func (fh FlashcardHandler) GetByDeckID(ctx *gin.Context) {
 // @Failure 500 {object} object{error=string}
 // @Router /flashcards [post]
 func (fh FlashcardHandler) Create(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
 	var body dto.CreateFlashcardDTO
 
 	if err := ctx.ShouldBind(&body); err != nil {
@@ -184,8 +209,8 @@ func (fh FlashcardHandler) Create(ctx *gin.Context) {
 
 	flashcard := domain.NewFlashcard(DeckID, body.Front, body.Back, body.Media)
 
-	if err := fh.service.Create(flashcard); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := fh.service.Create(reqCtx, flashcard); err != nil {
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -193,6 +218,9 @@ func (fh FlashcardHandler) Create(ctx *gin.Context) {
 }
 
 func (fh FlashcardHandler) CreateMany(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
 	flashcardsJSON := ctx.PostForm("flashcards")
 
 	var flashcards []dto.CreateFlashcardDTO
@@ -235,7 +263,7 @@ func (fh FlashcardHandler) CreateMany(ctx *gin.Context) {
 				return
 			}
 
-			err := fh.storage.Upload(portrepository.File{
+			err := fh.storage.Upload(reqCtx, portrepository.File{
 				Name: mediaName,
 				Data: mediaData,
 			})
@@ -255,7 +283,7 @@ func (fh FlashcardHandler) CreateMany(ctx *gin.Context) {
 
 		newFlashcard := domain.NewFlashcard(DeckID, flashcard.Front, flashcard.Back, mediaName)
 
-		if err := fh.service.Create(newFlashcard); err != nil {
+		if err := fh.service.Create(reqCtx, newFlashcard); err != nil {
 			ctx.JSON(500, gin.H{"error": "Error creating flashcard"})
 			return
 		}
@@ -278,12 +306,15 @@ func (fh FlashcardHandler) CreateMany(ctx *gin.Context) {
 // @Failure 500 {object} object{error=string}
 // @Router /flashcards/{id} [put]
 func (fh FlashcardHandler) Update(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
 
-	flashcard, err := fh.service.GetByID(id)
+	flashcard, err := fh.service.GetByID(reqCtx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -292,8 +323,8 @@ func (fh FlashcardHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	if err := fh.service.Update(flashcard); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := fh.service.Update(reqCtx, flashcard); err != nil {
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -311,10 +342,13 @@ func (fh FlashcardHandler) Update(ctx *gin.Context) {
 // @Failure 500 {object} object{error=string}
 // @Router /flashcards/{id} [delete]
 func (fh FlashcardHandler) Delete(ctx *gin.Context) {
+	reqCtx, cancel := requestContext(ctx, fh.timeout)
+	defer cancel()
+
 	id := ctx.Param("id")
 
-	if err := fh.service.Delete(id); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := fh.service.Delete(reqCtx, id); err != nil {
+		ctx.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 

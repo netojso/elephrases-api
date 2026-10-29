@@ -1,5 +1,7 @@
 package portrepository
 
+import "context"
+
 // File represents a file to be stored or retrieved
 type File struct {
 	Name string
@@ -8,7 +10,7 @@ type File struct {
 
 // StoragePort defines the interface for interacting with storage systems
 type StoragePort interface {
-	Upload(file File) error
+	Upload(ctx context.Context, file File) error
 	// Download(fileName string) (File, error)
 	// Delete(fileName string) error
 }

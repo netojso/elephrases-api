@@ -41,13 +41,13 @@ func NewS3Adapter(env *configproject.Env) (*S3Adapter, error) {
 }
 
 // Upload uploads a file to S3
-func (a *S3Adapter) Upload(file portrepository.File) error {
+func (a *S3Adapter) Upload(ctx context.Context, file portrepository.File) error {
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(a.bucket),
 		Key:    aws.String(file.Name),
 		Body:   bytes.NewReader(file.Data),
 	}
 
-	_, err := a.client.PutObject(context.TODO(), input)
+	_, err := a.client.PutObject(ctx, input)
 	return err
 }

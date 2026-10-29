@@ -1,6 +1,11 @@
 package portrepository
 
-import "github.com/netojso/elephrases-api/internal/core/domain"
+import (
+	"context"
+	"time"
+
+	"github.com/netojso/elephrases-api/internal/core/domain"
+)
 
 type Options struct {
 	Where map[string]interface{}
@@ -8,10 +13,15 @@ type Options struct {
 }
 
 type FlashcardRepository interface {
-	FindByDeckID(deckID string) ([]*domain.Flashcard, error)
-	FindAll(options *Options) ([]*domain.Flashcard, error)
-	FindByID(id string) (*domain.Flashcard, error)
-	Save(flashcard *domain.Flashcard) error
-	Update(flashcard *domain.Flashcard) error
-	Delete(id string) error
+	FindByDeckID(ctx context.Context, deckID string) ([]*domain.Flashcard, error)
+	// FindStudyQueue monta a fila de estudo do deck: cartões novos até o
+	// limite restante do dia e cartões vencidos em now, por next_review_at.
+	FindStudyQueue(ctx context.Context, deckID string, dailyLimit int, now time.Time) (*domain.Study, error)
+	FindAll(ctx context.Context, options *Options) ([]*domain.Flashcard, error)
+	FindByID(ctx context.Context, id string) (*domain.Flashcard, error)
+	// FindByIDForUpdate bloqueia a linha (SELECT ... FOR UPDATE) até o fim da transação.
+	FindByIDForUpdate(ctx context.Context, id string) (*domain.Flashcard, error)
+	Save(ctx context.Context, flashcard *domain.Flashcard) error
+	Update(ctx context.Context, flashcard *domain.Flashcard) error
+	Delete(ctx context.Context, id string) error
 }

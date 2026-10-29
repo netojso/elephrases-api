@@ -1,145 +1,139 @@
-# Flashcards App - Feature List and Structure
+# Elephrases API
 
-## Overview
-This document outlines the features, structure, and technical considerations for a Flashcards App similar to Anki. The app will be developed using Golang.
+API de flashcards com repetição espaçada, voltada ao estudo de idiomas. O usuário organiza cartões em decks, estuda uma fila diária (cartões novos e cartões vencidos) e cada resposta reagenda o cartão.
 
----
+**Stack:** Go 1.23 · Gin · GORM · PostgreSQL 15 · golang-migrate · Docker Compose · testcontainers-go · Swagger (swaggo)
 
-## Core Features
+- Requisitos de produto: [`docs/requirements.md`](docs/requirements.md) e [`requirements.md`](requirements.md)
+- Medições de desempenho da fila de estudo: [`docs/performance.md`](docs/performance.md)
 
-### 1. **Deck Management**
-   - **Create Decks**: Users can create decks to organize flashcards.
-   - **Edit Decks**: Rename, delete, or reorganize decks.
-   - **Import/Export Decks**: Support for importing and exporting decks in standard formats (e.g., CSV, JSON).
+## Arquitetura
 
-### 2. **Flashcard Management**
-   - **Add Flashcards**: Users can add new flashcards to a deck.
-   - **Edit Flashcards**: Modify the content of existing flashcards.
-   - **Delete Flashcards**: Remove flashcards from a deck.
-   - **Bulk Actions**: Add, edit, or delete multiple flashcards at once.
+O projeto segue a arquitetura hexagonal (ports & adapters). O núcleo (`internal/core`) não conhece HTTP, GORM nem Postgres. Ele declara **portas** (interfaces), e os **adapters** as implementam.
 
-### 3. **Study Modes**
-   - **Review Mode**: Flashcards are shown based on a spaced repetition algorithm.
-   - **Test Mode**: Users can test themselves on a deck with a set number of random cards.
-   - **Custom Study**: Users can study specific tags, difficult cards, or new cards.
+```mermaid
+flowchart LR
+    client([Cliente HTTP]) --> handlers
 
-### 4. **Spaced Repetition Algorithm**
-   - **Algorithm Implementation**: Implement a spaced repetition algorithm (e.g., SM-2 or FSRS).
-   - **Scheduling**: Cards are scheduled for review based on user performance.
-   - **Adjustable Intervals**: Allow users to adjust intervals for reviews.
+    subgraph adapters_in["adapters (entrada)"]
+        router[router] --> middleware[JWT middleware] --> handlers[http/handler]
+    end
 
-### 5. **Card Types**
-   - **Basic**: Front and back of the card.
-   - **Cloze Deletion**: Text with hidden parts (e.g., "The capital of France is {{Paris}}.").
-   - **Image Occlusion**: Images with hidden parts for memorization.
-   - **Custom Templates**: Allow users to create custom card templates.
+    subgraph core["core"]
+        portsvc[[ports/service]]
+        services[service]
+        domain[domain]
+        portrepo[[ports/repository]]
+        services -- implementa --> portsvc
+        services --> domain
+        services -- usa --> portrepo
+    end
 
-### 6. **Media Support**
-   - **Images**: Support for adding images to flashcards.
-   - **Audio**: Support for adding audio clips to flashcards.
-   - **Video**: Support for embedding videos (optional).
+    subgraph adapters_out["adapters (saída)"]
+        repos[repository/*<br/>GORM + SQL]
+        gormx[repository/gormx<br/>TxManager, erros]
+        storage[storage<br/>S3]
+    end
 
-### 7. **Tagging and Categorization**
-   - **Tags**: Users can add tags to flashcards for easy filtering.
-   - **Categories**: Organize decks into categories or folders.
-
-### 8. **Statistics and Progress Tracking**
-   - **Review History**: Track the history of reviews for each card.
-   - **Performance Metrics**: Show metrics like success rate, cards reviewed, and time spent.
-   - **Progress Graphs**: Visualize progress over time with graphs.
-
-### 9. **User Profiles**
-   - **Account Creation**: Users can create accounts to sync data.
-   - **Data Sync**: Sync decks and progress across devices.
-   - **Backup and Restore**: Allow users to backup and restore their data.
-
-### 10. **Customization**
-   - **Themes**: Light and dark mode support.
-   - **Card Styling**: Customize font size, color, and style for cards.
-   - **Keyboard Shortcuts**: Add shortcuts for faster navigation.
-
----
-
-## Technical Considerations
-
-### 1. **Backend (Golang)**
-   - **Database**: Use a database (e.g., SQLite, PostgreSQL) to store decks, cards, and user data.
-   - **API**: Create a RESTful or GraphQL API for frontend-backend communication.
-   - **Spaced Repetition Logic**: Implement the spaced repetition algorithm in Golang.
-   - **File Handling**: Handle media files (images, audio, video) and store them efficiently.
-
-### 2. **Frontend (Optional)**
-   - **Web Frontend**: Use a framework like React, Vue.js, or Svelte for a web-based UI.
-   - **Mobile Frontend**: Consider using Flutter or React Native for cross-platform mobile apps.
-   - **Desktop Frontend**: Use a framework like Electron for a desktop app.
-
-### 3. **Data Formats**
-   - **Deck Export/Import**: Use JSON or CSV for deck sharing.
-   - **Media Files**: Store media files in a dedicated directory or cloud storage.
-
-### 4. **Deployment**
-   - **Web App**: Deploy the app using Docker, Kubernetes, or a cloud provider (e.g., AWS, GCP).
-   - **Mobile App**: Publish the app on Google Play and Apple App Store.
-   - **Desktop App**: Package the app for Windows, macOS, and Linux.
-
----
-
-## Example Data Structures (Golang)
-
-### Deck Structure
-```go
-type Settings struct {
-    LearningSteps      []time.Duration
-    GraduatingInterval time.Duration
-    EasyInterval       time.Duration
-}
-
-type Deck struct {
-    ID          uuid.UUID
-    Name        string
-    Description pkg.NullableString
-    Category    string
-    Visibility  string
-    CreatedAt   time.Time
-    Flashcards  []Flashcard
-    // Settings    *Settings
-}
+    handlers -- usa --> portsvc
+    repos -- implementa --> portrepo
+    gormx -- implementa --> portrepo
+    storage -- implementa --> portrepo
+    repos --> pg[(PostgreSQL 15)]
+    storage --> s3[(S3)]
 ```
 
-### Flashcard Structure 
+| Camada | Pasta | Responsabilidade |
+|---|---|---|
+| Domínio | `internal/core/domain` | Entidades (`Flashcard`, `Deck`, `Review`, `User`) e regras, como o agendamento em `ReviewFlashcard`. |
+| Portas | `internal/core/ports/{service,repository}` | Interfaces de casos de uso e de persistência (`FlashcardRepository`, `ReviewRepository`, `TxManager`, ...). |
+| Services | `internal/core/service` | Casos de uso: orquestram domínio e portas. |
+| Adapters HTTP | `internal/adapters/{router,middleware,http}` | Rotas Gin, autenticação JWT, DTOs e mapeamento de erros para status HTTP. |
+| Adapters de persistência | `internal/adapters/repository` | Implementações GORM das portas, `TxManager` e mapeamento de erros. |
 
-```go
-type CardState string
+Regra de dependência: `core/domain` e `core/service` não importam GORM, Gin nem nada de `adapters`. A dependência aponta sempre para dentro.
 
-const (
-    New      CardState = "new"
-    Learning CardState = "learning"
-    Review   CardState = "review"
-    Lapsed   CardState = "lapsed"
-)
+## Persistência
 
-type Flashcard struct {
-    ID           uuid.UUID
-    DeckID       uuid.UUID
-    Front        string
-    Back         string
-    CreatedAt    time.Time
-    LastReviewAt pkg.NullableTime
-    NextReviewAt pkg.NullableTime
-    State        CardState
-    EaseFactor   float64
-    Interval     time.Duration
-}
+### GORM nos CRUDs, SQL explícito na fila de estudo
+
+As operações de CRUD (decks, cartões, usuários) usam GORM: são consultas simples, e o ORM reduz o código repetitivo.
+
+A fila de estudo (`GET /flashcards/deck/{deckID}/study`) é a consulta mais quente da aplicação e tem lógica própria: contar os cartões revisados hoje, limitar os novos ao que resta do limite diário e ordenar os vencidos. Ela é feita em **uma única query com CTEs** via `db.Raw` (`internal/adapters/repository/flashcards/study_queue.go`), só com parâmetros posicionais (`?`) e sem concatenar strings. O ganho é uma ida ao banco em vez de três e um snapshot consistente entre contagem e listas. Os números estão em [`docs/performance.md`](docs/performance.md).
+
+### Migrations versionadas
+
+O schema é definido apenas por migrations SQL em `database/migrations`, aplicadas com golang-migrate. Toda migration tem `up` e `down`. Migrations já aplicadas não são editadas, e qualquer mudança entra numa migration nova. Os testes de integração aplicam essas mesmas migrations, então o schema testado é o de produção.
+
+### Constraints e índices
+
+| Objeto | Motivo |
+|---|---|
+| `idx_flashcards_deck_next_review (deck_id, next_review_at)` | Fila de vencidos: `deck_id = ? AND next_review_at <= ?`. Sem ele, cada requisição de estudo fazia Seq Scan na tabela inteira. |
+| `idx_flashcards_deck_last_review (deck_id, last_review_at)` | Cartões novos (`last_review_at IS NULL`) e contagem de revisados hoje (`last_review_at >= início do dia`). |
+| `idx_reviews_flashcard_reviewed_at (flashcard_id, reviewed_at DESC)` | Histórico de revisões de um cartão, do mais recente ao mais antigo. |
+| `chk_flashcards_state` | `state` só aceita `new`, `learning`, `review` e `lapsed`. Um valor inválido vindo de bug ou de escrita manual é recusado pelo banco. |
+| `chk_flashcards_ease` | `ease_factor >= 1.3`, o piso do SM-2. Com um fator menor, os intervalos encolheriam indefinidamente. |
+| `fk_deck ... ON DELETE CASCADE` | Apagar um deck apaga seus cartões, e as revisões vão junto por cascade. Antes, a exclusão falhava com violação de FK. |
+| `decks.user_id` (nullable) | Prepara a posse de decks por usuário sem quebrar dados existentes. A obrigatoriedade virá numa migration futura. |
+
+### Transação na revisão
+
+`POST /flashcards/review` altera o cartão **e** grava uma linha em `reviews`. As duas escritas acontecem numa única transação, por meio da porta `TxManager`:
+
+1. `SELECT ... FOR UPDATE` no cartão, para que revisões concorrentes do mesmo cartão sejam serializadas e não se sobrescrevam;
+2. `ReviewFlashcard` aplica a resposta;
+3. `UPDATE` do cartão;
+4. `INSERT` em `reviews`.
+
+Se qualquer passo falhar, tudo é desfeito. A transação viaja no `context.Context`: os repositórios usam `gormx.DB(ctx, db)`, que devolve a transação do context quando ela existe e o `*gorm.DB` padrão quando não existe. Assim, o service não conhece GORM.
+
+### Context com timeout
+
+Cada handler deriva do request um `context.WithTimeout` (`CONTEXT_TIMEOUT`, em segundos), e esse context é propagado pelos services até `db.WithContext(ctx)`. Se o cliente desconectar ou o tempo estourar, a query é cancelada no Postgres em vez de seguir consumindo conexão. `gorm.ErrRecordNotFound` vira `pkg.ErrNotFound`, e a API responde 404.
+
+### Pool de conexões
+
+Configurado em `config.NewPostgresDatabase` a partir do `.env`:
+
+| Variável | Padrão | Efeito |
+|---|---|---|
+| `DB_MAX_OPEN_CONNS` | 25 | Teto de conexões abertas, que protege o Postgres sob carga. |
+| `DB_MAX_IDLE_CONNS` | 10 | Conexões mantidas ociosas para reuso. |
+| `DB_CONN_MAX_LIFETIME_MIN` | 30 | Recicla conexões antigas, útil atrás de balanceadores e em failover. |
+| `DB_CONN_MAX_IDLE_TIME_MIN` | 5 | Fecha conexões ociosas há muito tempo. |
+
+Na inicialização, um `PingContext` com timeout de 5 s encerra a aplicação com uma mensagem clara se o banco não responder. O logger do GORM fica em `Warn`, com `SlowThreshold` de 200 ms, e registra as queries lentas.
+
+## Como rodar
+
+### Docker Compose
+
+```bash
+cp .env.example .env
+# No .env, para o compose: DB_HOST=db e DB_PORT=5432; defina DB_PASS e os segredos de token.
+docker compose up --build
 ```
 
-### User Structure
+O compose sobe o Postgres, espera o healthcheck, aplica as migrations (serviço `migrate`) e só então inicia a API em `http://localhost:8081`.
 
-```go
-type User struct {
-    ID          string
-    FullName    pkg.NullableString
-    Password    string
-    Email       string
-    PhoneNumber pkg.NullableString
-}
+### Local (API fora do Docker)
+
+```bash
+cp .env.example .env      # DB_HOST/DB_PORT apontando para o seu Postgres
+make migrate-up           # aplica as migrations (golang-migrate via go run)
+make run                  # sobe a API
 ```
+
+### Testes
+
+```bash
+make test               # unitários: domínio e services (mocks com testify)
+make test-integration   # unitários + repositórios contra Postgres 15 real (requer Docker)
+```
+
+Os testes de integração ficam atrás da build tag `integration` e sobem um Postgres 15 com testcontainers, aplicando as migrations reais. O CI (`.github/workflows/ci.yml`) roda `go vet`, os testes unitários e os de integração.
+
+### Swagger
+
+Com a API rodando: **http://localhost:8081/swagger/index.html**

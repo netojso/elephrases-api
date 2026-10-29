@@ -2,16 +2,17 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/netojso/elephrases-api/config"
 	"github.com/netojso/elephrases-api/internal/adapters/http/handler"
 	repository "github.com/netojso/elephrases-api/internal/adapters/repository/users"
 	"github.com/netojso/elephrases-api/internal/core/service"
 	"gorm.io/gorm"
 )
 
-func NewUsersRouter(db *gorm.DB, group *gin.RouterGroup) {
+func NewUsersRouter(env *config.Env, db *gorm.DB, group *gin.RouterGroup) {
 	repo := repository.NewUserRepository(db)
 	service := service.NewUserService(repo)
-	handler := handler.NewUserHandler(service)
+	handler := handler.NewUserHandler(service, timeout(env))
 
 	group.GET("/users", handler.Fetch)
 

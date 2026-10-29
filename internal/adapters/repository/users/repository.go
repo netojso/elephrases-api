@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"database/sql"
-	"errors"
+	"context"
 
+	"github.com/netojso/elephrases-api/internal/adapters/repository/gormx"
 	"github.com/netojso/elephrases-api/internal/core/domain"
 	portrepository "github.com/netojso/elephrases-api/internal/core/ports/repository"
 	"gorm.io/gorm"
@@ -17,10 +17,10 @@ func NewUserRepository(db *gorm.DB) portrepository.UserRepository {
 	return &UserRepository{DB: db}
 }
 
-func (r *UserRepository) Create(user *domain.User) error {
+func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 	model := domainToModel(user)
 
-	err := r.DB.Create(&model).Error
+	err := gormx.DB(ctx, r.DB).Create(&model).Error
 
 	if err != nil {
 		return err
@@ -29,9 +29,9 @@ func (r *UserRepository) Create(user *domain.User) error {
 	return nil
 }
 
-func (r *UserRepository) Fetch() ([]*domain.User, error) {
+func (r *UserRepository) Fetch(ctx context.Context) ([]*domain.User, error) {
 	var users []*User
-	err := r.DB.Find(&users).Error
+	err := gormx.DB(ctx, r.DB).Find(&users).Error
 
 	if err != nil {
 		return nil, err
@@ -41,44 +41,36 @@ func (r *UserRepository) Fetch() ([]*domain.User, error) {
 
 }
 
-func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var user User
 
-	err := r.DB.Where("email = ?", email).First(&user).Error
+	err := gormx.DB(ctx, r.DB).Where("email = ?", email).First(&user).Error
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("user not found")
-		}
-		return nil, err
+		return nil, gormx.MapError(err)
 	}
 
 	return user.ToDomain(), nil
 }
 
-func (r *UserRepository) GetByID(id string) (*domain.User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	var user User
-	err := r.DB.Where("id = ?", id).First(&user).Error
+	err := gormx.DB(ctx, r.DB).Where("id = ?", id).First(&user).Error
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("user not found")
-		}
-
-		return nil, err
+		return nil, gormx.MapError(err)
 	}
 
 	return user.ToDomain(), nil
 }
 
-func (r *UserRepository) UpdateUser(id string, user *domain.User) error {
+func (r *UserRepository) UpdateUser(ctx context.Context, id string, user *domain.User) error {
 	model := domainToModel(user)
-	err := r.DB.Save(model).Error
+	err := gormx.DB(ctx, r.DB).Save(model).Error
 	return err
 }
 
-func (r *UserRepository) DeleteUser(id string) error {
+func (r *UserRepository) DeleteUser(ctx context.Context, id string) error {
 	query := "DELETE FROM users WHERE id = ?"
-	err := r.DB.Exec(query, id).Error
-	return err
+	return gormx.DeleteResult(gormx.DB(ctx, r.DB).Exec(query, id))
 }

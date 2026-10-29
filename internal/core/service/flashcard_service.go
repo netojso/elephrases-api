@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/netojso/elephrases-api/internal/core/domain"
@@ -11,103 +12,66 @@ import (
 )
 
 type flashcardService struct {
-	repo portrepository.FlashcardRepository
+	repo    portrepository.FlashcardRepository
+	reviews portrepository.ReviewRepository
+	tx      portrepository.TxManager
+	now     func() time.Time
 }
 
-func NewFlashcardService(repo portrepository.FlashcardRepository) portservice.FlashcardService {
-	return &flashcardService{repo: repo}
+// FlashcardServiceOption personaliza o flashcardService.
+type FlashcardServiceOption func(*flashcardService)
+
+// WithClock substitui time.Now; usado nos testes para tornar o tempo determinístico.
+func WithClock(now func() time.Time) FlashcardServiceOption {
+	return func(fs *flashcardService) {
+		fs.now = now
+	}
 }
 
-func (fs *flashcardService) Study(deckID string) (*domain.Study, error) {
-	dailyLimit := 20
-
-	yesterday := time.Date(
-		time.Now().Year(),
-		time.Now().Month(),
-		time.Now().Day(),
-		0,
-		0,
-		0,
-		0,
-		time.Now().Location(),
-	)
-
-	review_today_flashcards, err := fs.repo.FindAll(
-		&portrepository.Options{
-			Where: map[string]interface{}{
-				"deck_id = ?":        deckID,
-				"last_review_at > ?": yesterday,
-			},
-		})
-
-	if err != nil {
-		return nil, err
+func NewFlashcardService(
+	repo portrepository.FlashcardRepository,
+	reviews portrepository.ReviewRepository,
+	tx portrepository.TxManager,
+	opts ...FlashcardServiceOption,
+) portservice.FlashcardService {
+	fs := &flashcardService{repo: repo, reviews: reviews, tx: tx, now: time.Now}
+	for _, opt := range opts {
+		opt(fs)
 	}
-
-	new_flashcards, err := fs.repo.FindAll(
-		&portrepository.Options{
-			Where: map[string]interface{}{
-				"deck_id":        deckID,
-				"last_review_at": nil,
-			},
-			Limit: dailyLimit - len(review_today_flashcards),
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	due_flashcards, err := fs.repo.FindAll(
-		&portrepository.Options{
-			Where: map[string]interface{}{
-				"deck_id":             deckID,
-				"next_review_at <= ?": time.Now(),
-			},
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if new_flashcards == nil {
-		new_flashcards = []*domain.Flashcard{}
-	}
-
-	if due_flashcards == nil {
-		due_flashcards = []*domain.Flashcard{}
-	}
-
-	return &domain.Study{
-		NewCards: new_flashcards,
-		DueCards: due_flashcards,
-	}, nil
+	return fs
 }
 
-func (fs *flashcardService) GetDueFlashcards() ([]*domain.Flashcard, error) {
+// dailyNewCardLimit é o máximo de cartões estudados por deck por dia.
+const dailyNewCardLimit = 20
+
+func (fs *flashcardService) Study(ctx context.Context, deckID string) (*domain.Study, error) {
+	return fs.repo.FindStudyQueue(ctx, deckID, dailyNewCardLimit, fs.now())
+}
+
+func (fs *flashcardService) GetDueFlashcards(ctx context.Context) ([]*domain.Flashcard, error) {
 	return fs.repo.FindAll(
+		ctx,
 		&portrepository.Options{
 			Where: map[string]interface{}{
-				"next_review_at <= ?": time.Now(),
+				"next_review_at <= ?": fs.now(),
 			},
 		},
 	)
 }
 
-func (fs *flashcardService) GetAll() ([]*domain.Flashcard, error) {
-	return fs.repo.FindAll(nil)
+func (fs *flashcardService) GetAll(ctx context.Context) ([]*domain.Flashcard, error) {
+	return fs.repo.FindAll(ctx, nil)
 }
 
-func (fs *flashcardService) GetByID(id string) (*domain.Flashcard, error) {
-	return fs.repo.FindByID(id)
+func (fs *flashcardService) GetByID(ctx context.Context, id string) (*domain.Flashcard, error) {
+	return fs.repo.FindByID(ctx, id)
 }
 
-func (fs *flashcardService) GetByDeckID(deckID string) ([]*domain.Flashcard, error) {
-	return fs.repo.FindByDeckID(deckID)
+func (fs *flashcardService) GetByDeckID(ctx context.Context, deckID string) ([]*domain.Flashcard, error) {
+	return fs.repo.FindByDeckID(ctx, deckID)
 }
 
-func (fs *flashcardService) Create(flashcard *domain.Flashcard) error {
+func (fs *flashcardService) Create(ctx context.Context, flashcard *domain.Flashcard) error {
 	// add s3 domain to media flashcard
 
 	s3Url := viper.GetString("AWS_S3_URL")
@@ -120,25 +84,36 @@ func (fs *flashcardService) Create(flashcard *domain.Flashcard) error {
 
 	flashcard.MediaUrl = mediaUrl
 
-	return fs.repo.Save(flashcard)
+	return fs.repo.Save(ctx, flashcard)
 }
 
-func (fs *flashcardService) Update(flashcard *domain.Flashcard) error {
-	return fs.repo.Update(flashcard)
+func (fs *flashcardService) Update(ctx context.Context, flashcard *domain.Flashcard) error {
+	return fs.repo.Update(ctx, flashcard)
 }
 
-func (fs *flashcardService) Review(id string, response string) error {
-	flashcard, err := fs.repo.FindByID(id)
+// Review aplica a resposta ao cartão e registra a revisão na mesma transação.
+// O cartão é bloqueado (FOR UPDATE) para que revisões concorrentes não se sobrescrevam.
+func (fs *flashcardService) Review(ctx context.Context, id string, response string) error {
+	return fs.tx.WithinTransaction(ctx, func(ctx context.Context) error {
+		flashcard, err := fs.repo.FindByIDForUpdate(ctx, id)
 
-	if err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
-	flashcard.ReviewFlashcard(response, nil)
+		previousState := flashcard.State
+		now := fs.now()
 
-	return fs.repo.Update(flashcard)
+		flashcard.ReviewFlashcard(response, nil, now)
+
+		if err := fs.repo.Update(ctx, flashcard); err != nil {
+			return err
+		}
+
+		return fs.reviews.Save(ctx, domain.NewReview(flashcard, response, previousState, now))
+	})
 }
 
-func (fs *flashcardService) Delete(id string) error {
-	return fs.repo.Delete(id)
+func (fs *flashcardService) Delete(ctx context.Context, id string) error {
+	return fs.repo.Delete(ctx, id)
 }

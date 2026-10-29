@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/netojso/elephrases-api/internal/core/domain"
@@ -18,9 +19,9 @@ func NewDeckUsecase(repo portrepository.DeckRepository) portservice.DeckService 
 	}
 }
 
-func (ds *DeckService) GetAll() ([]*domain.Deck, error) {
+func (ds *DeckService) GetAll(ctx context.Context) ([]*domain.Deck, error) {
 	dailyLimit := 20
-	decks, err := ds.repo.FindAll()
+	decks, err := ds.repo.FindAll(ctx)
 
 	if err != nil {
 		return nil, err
@@ -61,18 +62,18 @@ func (ds *DeckService) GetAll() ([]*domain.Deck, error) {
 	return decks, nil
 }
 
-func (ds *DeckService) GetByID(id string) (*domain.Deck, error) {
-	return ds.repo.FindByID(id)
+func (ds *DeckService) GetByID(ctx context.Context, id string) (*domain.Deck, error) {
+	return ds.repo.FindByID(ctx, id)
 }
 
-func (ds *DeckService) Create(deck *domain.Deck) error {
-	return ds.repo.Save(deck)
+func (ds *DeckService) Create(ctx context.Context, deck *domain.Deck) error {
+	return ds.repo.Save(ctx, deck)
 }
 
-func (ds *DeckService) Update(deck *domain.Deck) error {
-	return ds.repo.Update(deck)
+func (ds *DeckService) Update(ctx context.Context, deck *domain.Deck) error {
+	return ds.repo.Update(ctx, deck)
 }
 
-func (ds *DeckService) Delete(id string) error {
-	return ds.repo.Delete(id)
+func (ds *DeckService) Delete(ctx context.Context, id string) error {
+	return ds.repo.Delete(ctx, id)
 }
